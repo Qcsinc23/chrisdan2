@@ -1,18 +1,38 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { LogIn, UserPlus, Mail, Lock } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { LogIn, UserPlus, Mail, Lock, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import toast from 'react-hot-toast'
 
 export default function CustomerLoginPage() {
-  const { signIn } = useAuth()
+  const { signIn, user, isCustomer, customerLoading } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   })
+
+  // Enhanced redirect logic with proper customer status check
+  useEffect(() => {
+    if (user && !customerLoading) {
+      const from = (location.state as any)?.from?.pathname || '/customer/dashboard'
+      
+      if (isCustomer) {
+        // User is authenticated and has customer account
+        console.log('Customer authenticated, redirecting to dashboard...')
+        navigate(from, { replace: true })
+      } else {
+        // User is authenticated but doesn't have customer account
+        // Redirect to settings to complete profile
+        console.log('User authenticated but no customer account, redirecting to settings...')
+        navigate('/customer/dashboard/settings', { replace: true })
+      }
+    }
+  }, [user, isCustomer, customerLoading, navigate, location.state])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -25,9 +45,13 @@ export default function CustomerLoginPage() {
     setLoading(true)
     
     try {
-      await signIn(formData.email, formData.password)
-      toast.success('Welcome back!')
-      navigate('/customer/dashboard')
+      const result = await signIn(formData.email, formData.password)
+      
+      if (result.success) {
+        // Redirect will be handled by useEffect above
+      } else {
+        // Error is already shown by signIn function
+      }
     } catch (error: any) {
       console.error('Login error:', error)
       toast.error(error.message || 'Failed to sign in')
@@ -91,16 +115,24 @@ export default function CustomerLoginPage() {
                 <input
                   id="password"
                   name="password"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  className="appearance-none block w-full px-3 py-2 pl-10 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="appearance-none block w-full px-3 py-2 pl-10 pr-12 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Enter your password"
                   disabled={loading}
                 />
                 <Lock className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+                  disabled={loading}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
               </div>
             </div>
 

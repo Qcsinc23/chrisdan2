@@ -1,4 +1,5 @@
-Deno.serve(async (req) => {
+// @ts-ignore - Deno global is available in Edge Functions runtime
+Deno.serve(async (req: Request) => {
     const corsHeaders = {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -12,7 +13,9 @@ Deno.serve(async (req) => {
     }
 
     try {
+        // @ts-ignore - Deno.env is available in Edge Functions runtime
         const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+        // @ts-ignore - Deno.env is available in Edge Functions runtime
         const supabaseUrl = Deno.env.get('SUPABASE_URL');
 
         if (!serviceRoleKey || !supabaseUrl) {
@@ -51,10 +54,10 @@ Deno.serve(async (req) => {
                     }
                 });
 
-                let bookedSlots = [];
+                let bookedSlots: string[] = [];
                 if (existingBookingsResponse.ok) {
-                    const bookings = await existingBookingsResponse.json();
-                    bookedSlots = bookings.map(booking => booking.time_slot);
+                    const bookings: any[] = await existingBookingsResponse.json();
+                    bookedSlots = bookings.map((booking: any) => booking.time_slot);
                 }
 
                 // Filter available slots
@@ -108,6 +111,58 @@ Deno.serve(async (req) => {
 
                 if (customerBookingsResponse.ok) {
                     result = await customerBookingsResponse.json();
+                } else {
+                    result = [];
+                }
+                break;
+
+            case 'get_all_bookings':
+                // Get all bookings (for staff)
+                const allBookingsResponse = await fetch(`${supabaseUrl}/rest/v1/service_bookings?order=booking_date.desc,created_at.desc`, {
+                    headers: {
+                        'Authorization': `Bearer ${serviceRoleKey}`,
+                        'apikey': serviceRoleKey
+                    }
+                });
+
+                if (allBookingsResponse.ok) {
+                    const bookings: any[] = await allBookingsResponse.json();
+                    
+                    // Get customer information for each booking
+                    const enrichedBookings: any[] = [];
+                    for (const booking of bookings) {
+                        try {
+                            const customerResponse = await fetch(`${supabaseUrl}/rest/v1/customers?id=eq.${booking.customer_id}`, {
+                                headers: {
+                                    'Authorization': `Bearer ${serviceRoleKey}`,
+                                    'apikey': serviceRoleKey
+                                }
+                            });
+                            
+                            let customerInfo: any = { full_name: 'Unknown Customer', email: '' };
+                            if (customerResponse.ok) {
+                                const customers: any[] = await customerResponse.json();
+                                if (customers.length > 0) {
+                                    customerInfo = customers[0];
+                                }
+                            }
+                            
+                            enrichedBookings.push({
+                                ...booking,
+                                customer_name: customerInfo.full_name,
+                                customer_email: customerInfo.email
+                            });
+                        } catch (error) {
+                            // If customer fetch fails, still include the booking
+                            enrichedBookings.push({
+                                ...booking,
+                                customer_name: 'Unknown Customer',
+                                customer_email: ''
+                            });
+                        }
+                    }
+                    
+                    result = enrichedBookings;
                 } else {
                     result = [];
                 }

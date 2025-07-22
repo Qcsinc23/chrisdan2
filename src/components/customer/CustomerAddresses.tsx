@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { MapPin, Plus, Edit, Trash2, Check, X } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import { getAddressConfig, countries } from '@/lib/countryAddressFields'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import toast from 'react-hot-toast'
 
@@ -34,11 +35,6 @@ export default function CustomerAddresses({ customerAccount }: CustomerAddresses
     isDefault: false
   })
 
-  const countries = [
-    'Jamaica', 'Trinidad and Tobago', 'Barbados', 'Guyana', 'Suriname',
-    'Belize', 'Guatemala', 'Honduras', 'El Salvador', 'Nicaragua',
-    'Costa Rica', 'Panama', 'Dominican Republic', 'Haiti'
-  ]
 
   useEffect(() => {
     if (customerAccount) {
@@ -185,6 +181,16 @@ export default function CustomerAddresses({ customerAccount }: CustomerAddresses
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }))
+
+    // Clear state/province and postal code when country changes
+    if (name === 'country') {
+      setFormData(prev => ({
+        ...prev,
+        country: value,
+        stateProvince: '',
+        postalCode: ''
+      }))
+    }
   }
 
   if (loading && !showForm) {
@@ -278,53 +284,127 @@ export default function CustomerAddresses({ customerAccount }: CustomerAddresses
               />
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-1">
-                  City *
-                </label>
-                <input
-                  type="text"
-                  id="city"
-                  name="city"
-                  value={formData.city}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter city"
-                  required
-                />
+            {formData.country && (() => {
+              const addressConfig = getAddressConfig(formData.country);
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-1">
+                      {addressConfig.fields.city.label} {addressConfig.fields.city.required ? '*' : ''}
+                    </label>
+                    <input
+                      type="text"
+                      id="city"
+                      name="city"
+                      value={formData.city}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder={addressConfig.fields.city.placeholder}
+                      required={addressConfig.fields.city.required}
+                    />
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="stateProvince" className="block text-sm font-medium text-gray-700 mb-1">
+                      {addressConfig.fields.stateProvince.label} {addressConfig.fields.stateProvince.required ? '*' : ''}
+                    </label>
+                    {addressConfig.fields.stateProvince.options ? (
+                      <select
+                        id="stateProvince"
+                        name="stateProvince"
+                        value={formData.stateProvince}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required={addressConfig.fields.stateProvince.required}
+                      >
+                        <option value="">{addressConfig.fields.stateProvince.placeholder}</option>
+                        {addressConfig.fields.stateProvince.options.map(option => (
+                          <option key={option} value={option}>{option}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        id="stateProvince"
+                        name="stateProvince"
+                        value={formData.stateProvince}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        placeholder={addressConfig.fields.stateProvince.placeholder}
+                        required={addressConfig.fields.stateProvince.required}
+                      />
+                    )}
+                  </div>
+                  
+                  <div>
+                    <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700 mb-1">
+                      {addressConfig.fields.postalCode.label} {addressConfig.fields.postalCode.required ? '*' : ''}
+                    </label>
+                    <input
+                      type="text"
+                      id="postalCode"
+                      name="postalCode"
+                      value={formData.postalCode}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder={addressConfig.fields.postalCode.placeholder}
+                      required={addressConfig.fields.postalCode.required}
+                      pattern={addressConfig.fields.postalCode.pattern}
+                    />
+                  </div>
+                </div>
+              );
+            })()}
+
+            {!formData.country && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-1">
+                    City *
+                  </label>
+                  <input
+                    type="text"
+                    id="city"
+                    name="city"
+                    value={formData.city}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter city"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="stateProvince" className="block text-sm font-medium text-gray-700 mb-1">
+                    State/Province
+                  </label>
+                  <input
+                    type="text"
+                    id="stateProvince"
+                    name="stateProvince"
+                    value={formData.stateProvince}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter state/province"
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700 mb-1">
+                    Postal Code
+                  </label>
+                  <input
+                    type="text"
+                    id="postalCode"
+                    name="postalCode"
+                    value={formData.postalCode}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter postal code"
+                  />
+                </div>
               </div>
-              
-              <div>
-                <label htmlFor="stateProvince" className="block text-sm font-medium text-gray-700 mb-1">
-                  State/Province
-                </label>
-                <input
-                  type="text"
-                  id="stateProvince"
-                  name="stateProvince"
-                  value={formData.stateProvince}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter state/province"
-                />
-              </div>
-              
-              <div>
-                <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700 mb-1">
-                  Postal Code
-                </label>
-                <input
-                  type="text"
-                  id="postalCode"
-                  name="postalCode"
-                  value={formData.postalCode}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Enter postal code"
-                />
-              </div>
-            </div>
+            )}
             
             <div className="flex items-center">
               <input

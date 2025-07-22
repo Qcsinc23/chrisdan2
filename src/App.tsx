@@ -17,6 +17,7 @@ import PrivateRoute from '@/components/PrivateRoute'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import LiveChat from '@/components/LiveChat'
 import { Toaster } from 'react-hot-toast'
+import NotFoundPage from '@/pages/NotFoundPage'
 
 function App() {
   const { loading } = useAuth()
@@ -44,17 +45,9 @@ function App() {
           {/* Staff Routes */}
           <Route path="/staff/login" element={<StaffLoginPage />} />
           <Route 
-            path="/staff/dashboard" 
-            element={
-              <PrivateRoute>
-                <StaffDashboard />
-              </PrivateRoute>
-            } 
-          />
-          <Route 
             path="/staff/dashboard/*" 
             element={
-              <PrivateRoute>
+              <PrivateRoute requireStaff>
                 <StaffDashboard />
               </PrivateRoute>
             } 
@@ -64,21 +57,16 @@ function App() {
           <Route path="/customer/login" element={<CustomerLoginPage />} />
           <Route path="/customer/register" element={<CustomerRegisterPage />} />
           <Route 
-            path="/customer/dashboard" 
-            element={
-              <PrivateRoute>
-                <CustomerDashboard />
-              </PrivateRoute>
-            } 
-          />
-          <Route 
             path="/customer/dashboard/*" 
             element={
-              <PrivateRoute>
+              <PrivateRoute requireCustomer>
                 <CustomerDashboard />
               </PrivateRoute>
             } 
           />
+
+          {/* 404 Not Found Route */}
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
       <Footer />

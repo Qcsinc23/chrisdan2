@@ -1,23 +1,36 @@
-import { useState } from 'react'
-import { Navigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Navigate, useLocation, Link, useNavigate } from 'react-router-dom'
 import { Package, Lock, Mail, Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import toast from 'react-hot-toast'
 
 export default function StaffLoginPage() {
-  const { user, isStaff, signIn, staffLoading } = useAuth()
+  const { signIn, user, isStaff, staffLoading } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  // Redirect if already logged in as staff
-  if (user && isStaff && !staffLoading) {
-    return <Navigate to="/staff/dashboard" replace />
-  }
+  // Enhanced redirect logic with proper staff status check
+  useEffect(() => {
+    if (user && !staffLoading) {
+      const from = (location.state as any)?.from?.pathname || '/staff/dashboard'
+      
+      if (isStaff) {
+        // User is authenticated and has staff access
+        console.log('Staff authenticated, redirecting to dashboard...')
+        navigate(from, { replace: true })
+      } else {
+        // User is authenticated but doesn't have staff access
+        console.log('User authenticated but not staff, staying on login page...')
+      }
+    }
+  }, [user, isStaff, staffLoading, location.state, navigate])
 
-  // Show loading if checking staff status
+  // Show loading while checking staff status
   if (user && staffLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700 flex items-center justify-center">
@@ -27,6 +40,12 @@ export default function StaffLoginPage() {
         </div>
       </div>
     )
+  }
+
+  // Redirect if already logged in as staff
+  if (user && isStaff && !staffLoading) {
+    const from = (location.state as any)?.from?.pathname || '/staff/dashboard'
+    return <Navigate to={from} replace />
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -40,11 +59,16 @@ export default function StaffLoginPage() {
     setLoading(true)
     
     try {
-      await signIn(email, password)
-      // Let React Router handle the redirect via PrivateRoute
+      const result = await signIn(email, password)
+      
+      if (result.success) {
+        // Redirect will be handled by useEffect above
+      } else {
+        // Error is already shown by signIn function
+      }
     } catch (error: any) {
       console.error('Login error:', error)
-      // Error is already shown by signIn function
+      toast.error(error.message || 'Failed to sign in')
     } finally {
       setLoading(false)
     }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Routes, Route, Link, useLocation } from 'react-router-dom'
+import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom'
 import { 
   Package, 
   MapPin, 
@@ -9,10 +9,10 @@ import {
   Settings,
   Bell,
   CreditCard,
-  Archive
+  Archive,
+  AlertCircle
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { supabase } from '@/lib/supabase'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import toast from 'react-hot-toast'
 
@@ -26,11 +26,10 @@ import CustomerSettings from '@/components/customer/CustomerSettings'
 import CustomerOverview from '@/components/customer/CustomerOverview'
 
 export default function CustomerDashboard() {
-  const { user } = useAuth()
+  const { user, customerAccount, customerLoading, isCustomer } = useAuth()
   const location = useLocation()
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('overview')
-  const [customerAccount, setCustomerAccount] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const path = location.pathname.split('/').pop()
@@ -41,38 +40,13 @@ export default function CustomerDashboard() {
     }
   }, [location.pathname])
 
+  // Redirect to settings if user exists but customer account doesn't
   useEffect(() => {
-    if (user) {
-      loadCustomerAccount()
+    if (user && !customerLoading && !isCustomer) {
+      toast.error('Please complete your customer profile to access all features')
+      navigate('/customer/dashboard/settings', { replace: true })
     }
-  }, [user])
-
-  const loadCustomerAccount = async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke('manage-customer-account', {
-        body: {
-          action: 'get_account'
-        }
-      })
-
-      if (error) {
-        throw error
-      }
-
-      if (data?.data) {
-        setCustomerAccount(data.data)
-      } else {
-        // Account doesn't exist, redirect to complete profile
-        toast.error('Please complete your customer profile')
-        setActiveTab('settings')
-      }
-    } catch (error: any) {
-      console.error('Error loading customer account:', error)
-      toast.error('Failed to load account information')
-    } finally {
-      setLoading(false)
-    }
-  }
+  }, [user, isCustomer, customerLoading, navigate])
 
   const navigation = [
     { id: 'overview', name: 'Overview', icon: Package, href: '/customer/dashboard' },
@@ -84,10 +58,33 @@ export default function CustomerDashboard() {
     { id: 'settings', name: 'Account Settings', icon: Settings, href: '/customer/dashboard/settings' }
   ]
 
-  if (loading) {
+  if (customerLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size="lg" />
+      </div>
+    )
+  }
+
+  // Show account setup required message
+  if (!isCustomer && activeTab !== 'settings') {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="text-center py-12">
+              <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Account Setup Required</h2>
+              <p className="text-gray-600 mb-6">Please complete your customer profile to access all features</p>
+              <Link
+                to="/customer/dashboard/settings"
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Complete Profile
+              </Link>
+            </div>
+          </div>
+        </div>
       </div>
     )
   }
@@ -151,15 +148,21 @@ export default function CustomerDashboard() {
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Active Shipments</span>
-                  <span className="text-sm font-semibold text-blue-600">3</span>
+                  <span className="text-sm font-semibold text-blue-600">
+                    {customerAccount ? customerAccount.active_shipments || 0 : '—'}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Total Packages</span>
-                  <span className="text-sm font-semibold text-green-600">127</span>
+                  <span className="text-sm font-semibold text-green-600">
+                    {customerAccount ? customerAccount.total_packages || 0 : '—'}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-600">Saved Addresses</span>
-                  <span className="text-sm font-semibold text-purple-600">5</span>
+                  <span className="text-sm font-semibold text-purple-600">
+                    {customerAccount ? customerAccount.saved_addresses || 0 : '—'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -174,7 +177,7 @@ export default function CustomerDashboard() {
               <Route path="/bookings" element={<CustomerBookings customerAccount={customerAccount} />} />
               <Route path="/documents" element={<CustomerDocuments customerAccount={customerAccount} />} />
               <Route path="/consolidation" element={<CustomerConsolidation customerAccount={customerAccount} />} />
-              <Route path="/settings" element={<CustomerSettings customerAccount={customerAccount} onAccountUpdate={setCustomerAccount} />} />
+              <Route path="/settings" element={<CustomerSettings customerAccount={customerAccount} onAccountUpdate={() => {}} />} />
             </Routes>
           </div>
         </div>

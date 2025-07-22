@@ -28,7 +28,7 @@ export default function CustomerOverview({ customerAccount }: CustomerOverviewPr
     try {
       // Get customer email from user
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user?.email) return
+      if (!user?.email || !customerAccount) return
 
       // Load shipments
       const { data: shipments } = await supabase
@@ -37,6 +37,25 @@ export default function CustomerOverview({ customerAccount }: CustomerOverviewPr
         .eq('customer_email', user.email)
         .order('created_at', { ascending: false })
         .limit(5)
+
+      // Load pending bookings
+      let pendingBookingsCount = 0
+      try {
+        const { data: bookingsData } = await supabase.functions.invoke('service-booking-system', {
+          body: {
+            action: 'get_customer_bookings',
+            bookingData: {
+              customerId: customerAccount.id
+            }
+          }
+        })
+        
+        if (bookingsData?.data) {
+          pendingBookingsCount = bookingsData.data.filter((booking: any) => booking.status === 'pending').length
+        }
+      } catch (bookingsError) {
+        console.error('Error loading bookings:', bookingsError)
+      }
 
       if (shipments) {
         setRecentShipments(shipments)
@@ -50,7 +69,7 @@ export default function CustomerOverview({ customerAccount }: CustomerOverviewPr
           totalShipments: total,
           activeShipments: active,
           deliveredShipments: delivered,
-          pendingBookings: 0 // TODO: Load from service_bookings
+          pendingBookings: pendingBookingsCount
         })
       }
     } catch (error) {

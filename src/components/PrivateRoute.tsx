@@ -12,23 +12,8 @@ export default function PrivateRoute({ children, requireStaff = false, requireCu
   const { user, loading, isStaff, isCustomer, staffLoading, customerLoading } = useAuth()
   const location = useLocation()
   
-  const isStaffRoute = location.pathname.startsWith('/staff/')
-  const isCustomerRoute = location.pathname.startsWith('/customer/')
-
-  console.log('PrivateRoute state:', { 
-    user: !!user, 
-    loading, 
-    isStaff, 
-    isCustomer, 
-    staffLoading, 
-    customerLoading,
-    isStaffRoute,
-    isCustomerRoute,
-    path: location.pathname
-  })
-
-  // Show loading during initial auth check
-  if (loading) {
+  // Show loading during ANY loading state to prevent premature decisions
+  if (loading || staffLoading || customerLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size="lg" />
@@ -38,35 +23,23 @@ export default function PrivateRoute({ children, requireStaff = false, requireCu
 
   // If no user, redirect to appropriate login
   if (!user) {
-    if (isCustomerRoute) {
-      return <Navigate to="/customer/login" replace />
+    if (requireCustomer) {
+      return <Navigate to="/customer/login" replace state={{ from: location }} />
     }
-    return <Navigate to="/staff/login" replace />
+    if (requireStaff) {
+      return <Navigate to="/staff/login" replace state={{ from: location }} />
+    }
+    return <Navigate to="/customer/login" replace state={{ from: location }} />
   }
 
-  // Show loading while checking user type
-  if (staffLoading || customerLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <LoadingSpinner size="lg" />
-      </div>
-    )
+  // Handle staff routes - require staff authentication
+  if (requireStaff && !isStaff) {
+    return <Navigate to="/staff/login" replace state={{ from: location }} />
   }
 
-  // Handle staff routes
-  if (isStaffRoute || requireStaff) {
-    if (!isStaff) {
-      return <Navigate to="/staff/login" replace />
-    }
-    return <>{children}</>
-  }
-
-  // Handle customer routes
-  if (isCustomerRoute || requireCustomer) {
-    if (!isCustomer) {
-      return <Navigate to="/customer/login" replace />
-    }
-    return <>{children}</>
+  // Handle customer routes - require customer authentication
+  if (requireCustomer && !isCustomer) {
+    return <Navigate to="/customer/login" replace state={{ from: location }} />
   }
 
   // Default: allow access if user is authenticated

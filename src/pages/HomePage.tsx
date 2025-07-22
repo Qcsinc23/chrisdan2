@@ -109,14 +109,6 @@ export default function HomePage() {
                 </div>
               </div>
             </div>
-            
-            <div className="hidden lg:block">
-              <img 
-                src="/images/packages.jpg" 
-                alt="Shipping packages"
-                className="rounded-lg shadow-2xl"
-              />
-            </div>
           </div>
         </div>
       </section>
