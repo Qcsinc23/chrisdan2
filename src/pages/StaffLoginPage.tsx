@@ -16,21 +16,45 @@ export default function StaffLoginPage() {
 
   // Enhanced redirect logic with proper staff status check
   useEffect(() => {
-    if (user && !staffLoading) {
+    if (user && !staffLoading && !loading) {
       const from = (location.state as any)?.from?.pathname || '/staff/dashboard'
       
       if (isStaff) {
-        // User is authenticated and has staff access - wait a bit to ensure proper state
-        setTimeout(() => {
-          console.log('Staff authenticated, redirecting to dashboard...')
-          navigate(from, { replace: true })
-        }, 500)
+        console.log('Staff authenticated, redirecting to dashboard...', { user: user.email, staffLoading, loading })
+        navigate(from, { replace: true })
       } else {
         // User is authenticated but doesn't have staff access
         console.log('User authenticated but not staff, staying on login page...')
       }
     }
-  }, [user, isStaff, staffLoading, location.state, navigate])
+  }, [user, isStaff, staffLoading, loading, location.state, navigate])
+
+  // If user is authenticated but not staff, show access denied message
+  if (user && !staffLoading && !isStaff && !loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full">
+          <div className="bg-white rounded-lg shadow-2xl p-8 text-center">
+            <div className="flex justify-center mb-4">
+              <div className="bg-red-100 p-3 rounded-full">
+                <Package className="h-8 w-8 text-red-600" />
+              </div>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
+            <p className="text-gray-600 mb-6">
+              You don't have staff access permissions. Please contact your administrator.
+            </p>
+            <Link
+              to="/"
+              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Back to Main Site
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   // Show loading while checking staff status
   if (user && staffLoading) {

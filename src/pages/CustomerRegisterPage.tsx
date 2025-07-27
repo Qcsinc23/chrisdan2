@@ -31,23 +31,34 @@ export default function CustomerRegisterPage() {
 
   // Enhanced redirect logic with proper customer status check
   useEffect(() => {
-    if (user && !customerLoading) {
+    if (user && !customerLoading && !loading) {
       const from = (location.state as any)?.from?.pathname || '/customer/dashboard'
       
-      // Wait a bit longer to ensure role status is properly determined
-      setTimeout(() => {
-        if (isCustomer) {
-          // User is authenticated and has customer account
-          console.log('Customer already registered, redirecting to dashboard...')
-          navigate(from, { replace: true })
-        } else {
-          // User is authenticated but needs to complete profile
-          console.log('User authenticated but needs customer profile, redirecting to settings...')
-          navigate('/customer/dashboard/settings', { replace: true })
-        }
-      }, 500)
+      console.log('User authenticated, redirecting...', { user: user.email, isCustomer, customerLoading, loading })
+      navigate(from, { replace: true })
     }
-  }, [user, isCustomer, customerLoading, navigate, location.state])
+  }, [user, isCustomer, customerLoading, loading, navigate, location.state])
+
+  // If user is authenticated, don't show the registration form
+  if (user && !loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+          <div className="text-center">
+            <div className="mx-auto h-12 w-12 bg-green-600 rounded-lg flex items-center justify-center">
+              <UserPlus className="h-6 w-6 text-white" />
+            </div>
+            <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
+              Redirecting...
+            </h2>
+            <p className="mt-2 text-center text-sm text-gray-600">
+              Taking you to your dashboard
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   // Password strength checker
   useEffect(() => {
