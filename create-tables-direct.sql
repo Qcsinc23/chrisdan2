@@ -159,4 +159,5 @@ CREATE INDEX IF NOT EXISTS idx_consolidation_requests_customer_id ON consolidati
 CREATE INDEX IF NOT EXISTS idx_consolidation_requests_status ON consolidation_requests(status);
 
 CREATE INDEX IF NOT EXISTS idx_consolidation_items_consolidation_id ON consolidation_items(consolidation_id);
-CREATE INDEX IF NOT EXISTS idx_consolidation_items_shipment_id ON consolidation_items(shipment_id);
+-- CREATE INDEX IF NOT EXISTS idx_consolidation_items_shipment_id ON consolidation_items(shipment_id);
+-- Note: This index will be created when shipments table relationships are established
