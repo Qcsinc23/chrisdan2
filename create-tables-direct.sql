@@ -116,21 +116,7 @@ BEGIN
         FOREIGN KEY (customer_id) REFERENCES customer_accounts(id) ON DELETE CASCADE;
     END IF;
     
-    -- Add foreign key for customer_documents to shipments (with error handling)
-    BEGIN
-        IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_customer_documents_shipment') THEN
-            ALTER TABLE customer_documents 
-            ADD CONSTRAINT fk_customer_documents_shipment 
-            FOREIGN KEY (associated_shipment_id) REFERENCES shipments(id);
-        END IF;
-    EXCEPTION
-        WHEN undefined_table THEN
-            -- Shipments table doesn't exist, skip this constraint
-            NULL;
-        WHEN others THEN
-            -- Any other error, skip this constraint
-            NULL;
-    END;
+    -- Note: Foreign key for customer_documents to shipments will be added when shipments table is created
     
     -- Add foreign key for consolidation_requests
     IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_consolidation_customer') THEN
@@ -146,24 +132,7 @@ BEGIN
         FOREIGN KEY (consolidation_id) REFERENCES consolidation_requests(id) ON DELETE CASCADE;
     END IF;
     
-    -- Add foreign key for consolidation_items (with error handling)
-    BEGIN
-        IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_consolidation_items_shipment') THEN
-            ALTER TABLE consolidation_items 
-            ADD CONSTRAINT fk_consolidation_items_shipment 
-            FOREIGN KEY (shipment_id) REFERENCES shipments(id);
-        END IF;
-    EXCEPTION
-        WHEN undefined_table THEN
-            -- Shipments table doesn't exist, skip this constraint
-            NULL;
-        WHEN undefined_column THEN
-            -- Column doesn't exist, skip this constraint
-            NULL;
-        WHEN others THEN
-            -- Any other error, skip this constraint
-            NULL;
-    END;
+    -- Note: Foreign key for consolidation_items to shipments will be added when shipments table is created
     
     -- Add primary_address_id foreign key to customer_accounts
     IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_customer_accounts_primary_address') THEN
