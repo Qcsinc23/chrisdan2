@@ -10,6 +10,7 @@ import AboutPage from '@/pages/AboutPage'
 import ContactPage from '@/pages/ContactPage'
 import FAQPage from '@/pages/FAQPage'
 import StaffLoginPage from '@/pages/StaffLoginPage'
+import StaffRegisterPage from '@/pages/StaffRegisterPage'
 import StaffDashboard from '@/pages/StaffDashboard'
 import CustomerLoginPage from '@/pages/CustomerLoginPage'
 import CustomerRegisterPage from '@/pages/CustomerRegisterPage'
@@ -46,6 +47,7 @@ function App() {
           
           {/* Staff Routes */}
           <Route path="/staff/login" element={<StaffLoginPage />} />
+          <Route path="/staff/register" element={<StaffRegisterPage />} />
           <Route 
             path="/staff/dashboard/*" 
             element={

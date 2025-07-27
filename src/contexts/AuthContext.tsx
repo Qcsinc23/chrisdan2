@@ -167,31 +167,79 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     setStaffLoading(true)
     
-    // Set a timeout to prevent infinite loading
+    // Set a longer timeout to prevent premature failures
     const timeoutId = setTimeout(() => {
       console.warn('Staff status check timed out')
       setStaffLoading(false)
       setIsStaff(false)
-    }, 5000) // Reduced to 5 second timeout
+    }, 10000) // Increased to 10 second timeout
     
     try {
-      const { data, error } = await supabase
-        .from('staff_users')
-        .select('id, email, is_active, role')
-        .eq('email', email)
-        .eq('is_active', true)
-        .maybeSingle()
+      // Try with approval_status first, fallback if column doesn't exist
+      let data: any = null
+      let error: any = null
+      
+      try {
+        const result = await supabase
+          .from('staff_users')
+          .select('id, email, is_active, role, approval_status')
+          .eq('email', email)
+          .maybeSingle()
+        
+        data = result.data
+        error = result.error
+      } catch (e: any) {
+        // If approval_status column doesn't exist, try without it
+        if (e.message?.includes('approval_status') || (error && error.message?.includes('approval_status'))) {
+          console.log('approval_status column not found, falling back to basic check')
+          const fallbackResult = await supabase
+            .from('staff_users')
+            .select('id, email, is_active, role')
+            .eq('email', email)
+            .eq('is_active', true)
+            .maybeSingle()
+          
+          data = fallbackResult.data
+          error = fallbackResult.error
+        } else {
+          throw e
+        }
+      }
       
       clearTimeout(timeoutId)
       
       if (error && error.code !== 'PGRST116') {
         console.error('Error checking staff status:', error)
-        setIsStaff(false)
-        setStaffLoading(false)
+        // Don't immediately set to false - retry once
+        setTimeout(() => {
+          checkStaffStatus(email)
+        }, 1000)
         return
       }
       
-      const staffStatus = !!data
+      // Check staff status - if approval_status exists, check it; otherwise just check is_active
+      let staffStatus = false
+      if (data) {
+        if (data.approval_status !== undefined) {
+          // New approval system
+          staffStatus = !!(data.is_active && data.approval_status === 'approved')
+          
+          // Show specific message for pending approval
+          if (data.approval_status === 'pending') {
+            console.log('Staff account pending approval')
+          } else if (data.approval_status === 'rejected') {
+            console.log('Staff account rejected')
+          }
+        } else {
+          // Legacy system - just check is_active
+          staffStatus = !!data.is_active
+        }
+        
+        if (!data.is_active) {
+          console.log('Staff account inactive')
+        }
+      }
+      
       setIsStaff(staffStatus)
       console.log('Staff status check:', { email, staffStatus, data })
       setStaffLoading(false)
@@ -199,8 +247,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       clearTimeout(timeoutId)
       console.error('Error checking staff status:', error)
-      setIsStaff(false)
-      setStaffLoading(false)
+      // Retry once on network errors
+      setTimeout(() => {
+        setIsStaff(false)
+        setStaffLoading(false)
+      }, 1000)
     }
   }
 

@@ -179,11 +179,21 @@ export default function StaffLoginPage() {
             </button>
           </form>
 
+          {/* Registration Link */}
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-600">
+              Need staff access?{' '}
+              <Link to="/staff/register" className="font-medium text-blue-600 hover:text-blue-500">
+                Request Access
+              </Link>
+            </p>
+          </div>
+
           {/* Demo Info */}
           <div className="mt-6 p-4 bg-blue-50 rounded-lg">
             <h3 className="text-sm font-semibold text-blue-900 mb-2">Staff Access</h3>
             <p className="text-xs text-blue-800">
-              This portal is for authorized staff members only. Contact your administrator if you need access credentials.
+              This portal is for authorized staff members only. If you don't have an account, you can request access above.
             </p>
           </div>
 
