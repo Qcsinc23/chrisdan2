@@ -70,7 +70,7 @@ CREATE TABLE IF NOT EXISTS consolidation_requests (
 -- Create consolidation_items table
 CREATE TABLE IF NOT EXISTS consolidation_items (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    consolidation_id UUID REFERENCES consolidation_requests(id) ON DELETE CASCADE,
+    consolidation_id UUID NOT NULL,
     shipment_id UUID,
     tracking_number VARCHAR(255) NOT NULL,
     package_description TEXT,
@@ -129,6 +129,13 @@ BEGIN
         ALTER TABLE consolidation_requests 
         ADD CONSTRAINT fk_consolidation_customer 
         FOREIGN KEY (customer_id) REFERENCES customer_accounts(id);
+    END IF;
+    
+    -- Add foreign key for consolidation_items to consolidation_requests
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_consolidation_items_consolidation') THEN
+        ALTER TABLE consolidation_items 
+        ADD CONSTRAINT fk_consolidation_items_consolidation 
+        FOREIGN KEY (consolidation_id) REFERENCES consolidation_requests(id) ON DELETE CASCADE;
     END IF;
     
     -- Add foreign key for consolidation_items (only if shipments table exists)
