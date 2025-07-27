@@ -15,6 +15,7 @@ interface AuthContextType {
   customerLoading: boolean
   customerAccount: any
   refreshSession: () => Promise<void>
+  updateCustomerAccount: (account: any) => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -413,6 +414,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  // Update customer account state
+  const updateCustomerAccount = (account: any) => {
+    setCustomerAccount(account)
+  }
+
   const value = {
     user,
     loading,
@@ -424,7 +430,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     staffLoading,
     customerLoading,
     customerAccount,
-    refreshSession
+    refreshSession,
+    updateCustomerAccount
   }
 
   return (

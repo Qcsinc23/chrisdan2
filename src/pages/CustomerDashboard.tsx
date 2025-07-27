@@ -26,10 +26,16 @@ import CustomerSettings from '@/components/customer/CustomerSettings'
 import CustomerOverview from '@/components/customer/CustomerOverview'
 
 export default function CustomerDashboard() {
-  const { user, customerAccount, customerLoading, isCustomer } = useAuth()
+  const { user, customerAccount, customerLoading, isCustomer, updateCustomerAccount } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('overview')
+
+  // Handle account updates from settings
+  const handleAccountUpdate = (updatedAccount: any) => {
+    // Update the auth context with the new account data
+    updateCustomerAccount(updatedAccount)
+  }
 
   useEffect(() => {
     const path = location.pathname.split('/').pop()
@@ -179,7 +185,7 @@ export default function CustomerDashboard() {
               <Route path="/bookings" element={<CustomerBookings customerAccount={customerAccount} />} />
               <Route path="/documents" element={<CustomerDocuments customerAccount={customerAccount} />} />
               <Route path="/consolidation" element={<CustomerConsolidation customerAccount={customerAccount} />} />
-              <Route path="/settings" element={<CustomerSettings customerAccount={customerAccount} onAccountUpdate={() => {}} />} />
+              <Route path="/settings" element={<CustomerSettings customerAccount={customerAccount} onAccountUpdate={handleAccountUpdate} />} />
             </Routes>
           </div>
         </div>

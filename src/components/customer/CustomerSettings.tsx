@@ -42,42 +42,52 @@ export default function CustomerSettings({ customerAccount, onAccountUpdate }: C
     setLoading(true)
     
     try {
-      let action = 'update_account'
-      let accountData = {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        throw new Error('User not authenticated')
+      }
+
+      const updateData = {
         full_name: formData.fullName,
         phone: formData.phone,
         whatsapp_notifications: formData.whatsappNotifications,
         email_notifications: formData.emailNotifications,
-        sms_notifications: formData.smsNotifications
+        sms_notifications: formData.smsNotifications,
+        updated_at: new Date().toISOString()
       }
 
-      // If no customer account exists, create one
-      if (!customerAccount) {
-        action = 'create_account'
-        accountData = {
-          full_name: formData.fullName,
-          phone: formData.phone,
-          whatsapp_notifications: formData.whatsappNotifications,
-          email_notifications: formData.emailNotifications,
-          sms_notifications: formData.smsNotifications
-        }
+      let result
+
+      if (customerAccount) {
+        // Update existing account
+        const { data, error } = await supabase
+          .from('customer_accounts')
+          .update(updateData)
+          .eq('user_id', user.id)
+          .select()
+          .single()
+
+        if (error) throw error
+        result = data
+      } else {
+        // Create new account
+        const { data, error } = await supabase
+          .from('customer_accounts')
+          .insert({
+            user_id: user.id,
+            ...updateData
+          })
+          .select()
+          .single()
+
+        if (error) throw error
+        result = data
       }
 
-      const { data, error } = await supabase.functions.invoke('manage-customer-account', {
-        body: {
-          action,
-          accountData
-        }
-      })
+      // Update the parent component with the new account data
+      onAccountUpdate(result)
+      toast.success('Account updated successfully!')
 
-      if (error) {
-        throw error
-      }
-
-      if (data?.data) {
-        onAccountUpdate(Array.isArray(data.data) ? data.data[0] : data.data)
-        toast.success('Account updated successfully!')
-      }
     } catch (error: any) {
       console.error('Error updating account:', error)
       toast.error(error.message || 'Failed to update account')
