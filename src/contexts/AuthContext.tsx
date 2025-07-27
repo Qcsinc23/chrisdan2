@@ -117,10 +117,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(session?.user ?? null)
           
           if (event === 'SIGNED_IN' && session?.user) {
+            // Ensure role checks complete before allowing redirects
             await Promise.all([
               checkStaffStatus(session.user.email!),
               checkCustomerStatus(session.user.id)
             ])
+            console.log('Role checks completed after sign in')
           } else if (event === 'SIGNED_OUT') {
             setIsStaff(false)
             setIsCustomer(false)
@@ -335,7 +337,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (data.user) {
         if (data.session) {
           // Email verification disabled - user is logged in
-          toast.success('Account created successfully!')
+          // Automatically create customer account
+          try {
+            const { error: accountError } = await supabase.functions.invoke('manage-customer-account', {
+              body: {
+                action: 'create_account',
+                accountData: {
+                  fullName: metadata.fullName || metadata.full_name || data.user.email?.split('@')[0] || 'Customer',
+                  phone: metadata.phone || '',
+                  whatsappNotifications: true,
+                  emailNotifications: true,
+                  smsNotifications: false
+                }
+              }
+            })
+
+            if (accountError) {
+              console.error('Error creating customer account:', accountError)
+              toast.success('Account created! Please complete your profile in settings.')
+            } else {
+              console.log('Customer account created successfully')
+              toast.success('Account created successfully!')
+            }
+          } catch (error) {
+            console.error('Error creating customer account:', error)
+            toast.success('Account created! Please complete your profile in settings.')
+          }
         } else {
           // Email verification enabled - user needs to check email
           toast.success('Account created! Please check your email to verify your account')

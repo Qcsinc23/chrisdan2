@@ -21,10 +21,11 @@ export default function CustomerLoginPage() {
     if (user && !customerLoading) {
       const from = (location.state as any)?.from?.pathname || '/customer/dashboard'
       
-      // Always redirect to dashboard after successful login
-      // The dashboard will handle showing setup message if needed
-      console.log('Customer authenticated, redirecting to dashboard...')
-      navigate(from, { replace: true })
+      // Wait a bit longer to ensure role status is properly determined
+      setTimeout(() => {
+        console.log('Customer authenticated, redirecting to dashboard...')
+        navigate(from, { replace: true })
+      }, 500)
     }
   }, [user, customerLoading, navigate, location.state])
 

@@ -34,15 +34,18 @@ export default function CustomerRegisterPage() {
     if (user && !customerLoading) {
       const from = (location.state as any)?.from?.pathname || '/customer/dashboard'
       
-      if (isCustomer) {
-        // User is authenticated and has customer account
-        console.log('Customer already registered, redirecting to dashboard...')
-        navigate(from, { replace: true })
-      } else {
-        // User is authenticated but needs to complete profile
-        console.log('User authenticated but needs customer profile, redirecting to settings...')
-        navigate('/customer/dashboard/settings', { replace: true })
-      }
+      // Wait a bit longer to ensure role status is properly determined
+      setTimeout(() => {
+        if (isCustomer) {
+          // User is authenticated and has customer account
+          console.log('Customer already registered, redirecting to dashboard...')
+          navigate(from, { replace: true })
+        } else {
+          // User is authenticated but needs to complete profile
+          console.log('User authenticated but needs customer profile, redirecting to settings...')
+          navigate('/customer/dashboard/settings', { replace: true })
+        }
+      }, 500)
     }
   }, [user, isCustomer, customerLoading, navigate, location.state])
 

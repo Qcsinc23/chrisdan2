@@ -89,7 +89,14 @@ export default function Navbar() {
                   >
                     My Account
                   </Link>
-                ) : null}
+                ) : (
+                  <Link
+                    to="/customer/dashboard"
+                    className="bg-gray-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-700 transition-colors"
+                  >
+                    Dashboard
+                  </Link>
+                )}
                 <button
                   onClick={signOut}
                   className="text-gray-700 hover:text-red-600 text-sm font-medium"
@@ -164,7 +171,15 @@ export default function Navbar() {
                   >
                     My Account
                   </Link>
-                ) : null}
+                ) : (
+                  <Link
+                    to="/customer/dashboard"
+                    className="block px-3 py-2 text-base font-medium text-gray-600 hover:bg-gray-50"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    Dashboard
+                  </Link>
+                )}
                 <button
                   onClick={() => {
                     signOut()

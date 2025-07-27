@@ -20,9 +20,11 @@ export default function StaffLoginPage() {
       const from = (location.state as any)?.from?.pathname || '/staff/dashboard'
       
       if (isStaff) {
-        // User is authenticated and has staff access
-        console.log('Staff authenticated, redirecting to dashboard...')
-        navigate(from, { replace: true })
+        // User is authenticated and has staff access - wait a bit to ensure proper state
+        setTimeout(() => {
+          console.log('Staff authenticated, redirecting to dashboard...')
+          navigate(from, { replace: true })
+        }, 500)
       } else {
         // User is authenticated but doesn't have staff access
         console.log('User authenticated but not staff, staying on login page...')
