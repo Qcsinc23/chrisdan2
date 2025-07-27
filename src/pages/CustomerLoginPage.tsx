@@ -21,18 +21,12 @@ export default function CustomerLoginPage() {
     if (user && !customerLoading) {
       const from = (location.state as any)?.from?.pathname || '/customer/dashboard'
       
-      if (isCustomer) {
-        // User is authenticated and has customer account
-        console.log('Customer authenticated, redirecting to dashboard...')
-        navigate(from, { replace: true })
-      } else {
-        // User is authenticated but doesn't have customer account
-        // Redirect to settings to complete profile
-        console.log('User authenticated but no customer account, redirecting to settings...')
-        navigate('/customer/dashboard/settings', { replace: true })
-      }
+      // Always redirect to dashboard after successful login
+      // The dashboard will handle showing setup message if needed
+      console.log('Customer authenticated, redirecting to dashboard...')
+      navigate(from, { replace: true })
     }
-  }, [user, isCustomer, customerLoading, navigate, location.state])
+  }, [user, customerLoading, navigate, location.state])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

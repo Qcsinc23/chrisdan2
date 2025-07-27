@@ -40,13 +40,15 @@ export default function CustomerDashboard() {
     }
   }, [location.pathname])
 
-  // Redirect to settings if user exists but customer account doesn't
+  // Show message if user exists but customer account doesn't, but don't auto-redirect
   useEffect(() => {
-    if (user && !customerLoading && !isCustomer) {
-      toast.error('Please complete your customer profile to access all features')
-      navigate('/customer/dashboard/settings', { replace: true })
+    if (user && !customerLoading && !isCustomer && activeTab !== 'settings') {
+      toast('Complete your profile to access all customer features', {
+        icon: '💡',
+        duration: 4000,
+      })
     }
-  }, [user, isCustomer, customerLoading, navigate])
+  }, [user, isCustomer, customerLoading, activeTab])
 
   const navigation = [
     { id: 'overview', name: 'Overview', icon: Package, href: '/customer/dashboard' },
