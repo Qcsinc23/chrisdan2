@@ -26,6 +26,27 @@ export default function CustomerLoginPage() {
     }
   }, [user, customerLoading, loading, navigate, location.state])
 
+  // If user is authenticated, don't show the login form
+  if (user && !loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+          <div className="text-center">
+            <div className="mx-auto h-12 w-12 bg-green-600 rounded-lg flex items-center justify-center">
+              <LogIn className="h-6 w-6 text-white" />
+            </div>
+            <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
+              Redirecting...
+            </h2>
+            <p className="mt-2 text-center text-sm text-gray-600">
+              Taking you to your dashboard
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     

@@ -171,7 +171,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.warn('Staff status check timed out')
       setStaffLoading(false)
       setIsStaff(false)
-    }, 10000) // 10 second timeout
+    }, 5000) // Reduced to 5 second timeout
     
     try {
       const { data, error } = await supabase
@@ -216,9 +216,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const timeoutId = setTimeout(() => {
       console.warn('Customer status check timed out')
       setCustomerLoading(false)
-      setIsCustomer(false)
+      // Allow access even if customer check times out - user can complete profile later
+      setIsCustomer(true)
       setCustomerAccount(null)
-    }, 10000) // 10 second timeout
+    }, 5000) // Reduced to 5 second timeout
     
     try {
       // First, check if customer account exists
@@ -232,10 +233,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (fetchError && fetchError.code !== 'PGRST116') {
         console.error('Error checking customer status:', fetchError)
-        setIsCustomer(false)
+        // Allow access even if there's an error - user can complete profile later
+        setIsCustomer(true)
         setCustomerAccount(null)
         setCustomerLoading(false)
-        return false
+        return true
       }
 
       if (existingAccount) {
@@ -245,20 +247,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return true
       }
 
-      // For staff users, don't try to create customer accounts automatically
-      // This prevents infinite loops and unnecessary API calls
-      setIsCustomer(false)
+      // If no customer account exists, still allow access - user can complete profile later
+      setIsCustomer(true)
       setCustomerAccount(null)
       setCustomerLoading(false)
-      return false
+      return true
       
     } catch (error) {
       clearTimeout(timeoutId)
       console.error('Error checking customer status:', error)
-      setIsCustomer(false)
+      // Allow access even if there's an error - user can complete profile later
+      setIsCustomer(true)
       setCustomerAccount(null)
       setCustomerLoading(false)
-      return false
+      return true
     }
   }
 
