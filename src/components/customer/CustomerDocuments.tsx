@@ -45,6 +45,8 @@ export default function CustomerDocuments({ customerAccount }: CustomerDocuments
     if (customerAccount) {
       loadDocuments()
       loadShipments()
+    } else {
+      setLoading(false)
     }
   }, [customerAccount])
 
@@ -53,17 +55,19 @@ export default function CustomerDocuments({ customerAccount }: CustomerDocuments
       const { data, error } = await supabase
         .from('customer_documents')
         .select('*')
-        .eq('customer_id', customerAccount.id)
+        .eq('customer_id', customerAccount?.id || '')
         .order('upload_date', { ascending: false })
 
-      if (error) {
-        throw error
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error loading documents:', error)
+        // Don't show error toast, just set empty array
       }
 
       setDocuments(data || [])
     } catch (error: any) {
       console.error('Error loading documents:', error)
-      toast.error('Failed to load documents')
+      // Don't show error toast, just set empty array
+      setDocuments([])
     } finally {
       setLoading(false)
     }
@@ -80,13 +84,16 @@ export default function CustomerDocuments({ customerAccount }: CustomerDocuments
         .eq('customer_email', user.email)
         .order('created_at', { ascending: false })
 
-      if (error) {
-        throw error
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error loading shipments:', error)
+        // Don't show error toast, just set empty array
       }
 
       setShipments(data || [])
     } catch (error: any) {
       console.error('Error loading shipments:', error)
+      // Don't show error toast, just set empty array
+      setShipments([])
     }
   }
 

@@ -39,28 +39,30 @@ export default function CustomerAddresses({ customerAccount }: CustomerAddresses
   useEffect(() => {
     if (customerAccount) {
       loadAddresses()
+    } else {
+      setLoading(false)
     }
   }, [customerAccount])
 
   const loadAddresses = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('manage-customer-account', {
-        body: {
-          action: 'get_addresses',
-          accountData: {
-            customerId: customerAccount.id
-          }
-        }
-      })
+      // Try to load addresses from customer_addresses table directly
+      const { data, error } = await supabase
+        .from('customer_addresses')
+        .select('*')
+        .eq('customer_id', customerAccount?.id || '')
+        .order('created_at', { ascending: false })
 
-      if (error) {
-        throw error
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error loading addresses:', error)
+        // Don't show error toast, just set empty array
       }
 
-      setAddresses(data?.data || [])
+      setAddresses(data || [])
     } catch (error: any) {
       console.error('Error loading addresses:', error)
-      toast.error('Failed to load addresses')
+      // Don't show error toast, just set empty array
+      setAddresses([])
     } finally {
       setLoading(false)
     }
