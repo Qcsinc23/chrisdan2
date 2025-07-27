@@ -138,9 +138,10 @@ BEGIN
         FOREIGN KEY (consolidation_id) REFERENCES consolidation_requests(id) ON DELETE CASCADE;
     END IF;
     
-    -- Add foreign key for consolidation_items (only if shipments table exists)
+    -- Add foreign key for consolidation_items (only if shipments table and shipment_id column exist)
     IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fk_consolidation_items_shipment') 
-       AND EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'shipments') THEN
+       AND EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'shipments')
+       AND EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'consolidation_items' AND column_name = 'shipment_id') THEN
         ALTER TABLE consolidation_items 
         ADD CONSTRAINT fk_consolidation_items_shipment 
         FOREIGN KEY (shipment_id) REFERENCES shipments(id);
