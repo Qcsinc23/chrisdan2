@@ -28,50 +28,65 @@ export default function CustomerOverview({ customerAccount }: CustomerOverviewPr
     try {
       // Get customer email from user
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user?.email || !customerAccount) return
+      if (!user?.email || !customerAccount) {
+        setLoading(false)
+        return
+      }
 
-      // Load shipments
-      const { data: shipments } = await supabase
-        .from('shipments')
-        .select('*')
-        .eq('customer_email', user.email)
-        .order('created_at', { ascending: false })
-        .limit(5)
-
-      // Load pending bookings
+      // Initialize with default values
+      let shipments: any[] = []
       let pendingBookingsCount = 0
+
+      // Try to load shipments (table may not exist yet)
       try {
-        const { data: bookingsData } = await supabase.functions.invoke('service-booking-system', {
-          body: {
-            action: 'get_customer_bookings',
-            bookingData: {
-              customerId: customerAccount.id
-            }
-          }
-        })
-        
-        if (bookingsData?.data) {
-          pendingBookingsCount = bookingsData.data.filter((booking: any) => booking.status === 'pending').length
+        const { data: shipmentsData, error: shipmentsError } = await supabase
+          .from('shipments')
+          .select('*')
+          .eq('customer_email', user.email)
+          .order('created_at', { ascending: false })
+          .limit(5)
+
+        if (shipmentsError) {
+          console.log('Shipments table not available yet:', shipmentsError.message)
+        } else if (shipmentsData) {
+          shipments = shipmentsData
+        }
+      } catch (shipmentsError) {
+        console.log('Shipments table not available yet')
+      }
+
+      // Try to load pending bookings from service_bookings table
+      try {
+        const { data: bookingsData, error: bookingsError } = await supabase
+          .from('service_bookings')
+          .select('*')
+          .eq('customer_id', customerAccount.id)
+          .eq('status', 'pending')
+
+        if (bookingsError) {
+          console.log('Service bookings table not available yet:', bookingsError.message)
+        } else if (bookingsData) {
+          pendingBookingsCount = bookingsData.length
         }
       } catch (bookingsError) {
-        console.error('Error loading bookings:', bookingsError)
+        console.log('Service bookings table not available yet')
       }
 
-      if (shipments) {
-        setRecentShipments(shipments)
-        
-        // Calculate stats
-        const total = shipments.length
-        const active = shipments.filter(s => ['received', 'processing', 'shipped'].includes(s.status)).length
-        const delivered = shipments.filter(s => s.status === 'delivered').length
-        
-        setStats({
-          totalShipments: total,
-          activeShipments: active,
-          deliveredShipments: delivered,
-          pendingBookings: pendingBookingsCount
-        })
-      }
+      // Set recent shipments
+      setRecentShipments(shipments)
+      
+      // Calculate stats
+      const total = shipments.length
+      const active = shipments.filter(s => ['received', 'processing', 'shipped'].includes(s.status)).length
+      const delivered = shipments.filter(s => s.status === 'delivered').length
+      
+      setStats({
+        totalShipments: total,
+        activeShipments: active,
+        deliveredShipments: delivered,
+        pendingBookings: pendingBookingsCount
+      })
+
     } catch (error) {
       console.error('Error loading overview data:', error)
     } finally {
