@@ -118,15 +118,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           
           if (event === 'SIGNED_IN' && session?.user) {
             // Ensure role checks complete before allowing redirects
-            await Promise.all([
-              checkStaffStatus(session.user.email!),
-              checkCustomerStatus(session.user.id)
-            ])
-            console.log('Role checks completed after sign in')
+            try {
+              await Promise.all([
+                checkStaffStatus(session.user.email!),
+                checkCustomerStatus(session.user.id)
+              ])
+              console.log('Role checks completed after sign in')
+            } catch (error) {
+              console.error('Error during role checks:', error)
+              // Continue anyway to prevent blocking login
+            }
           } else if (event === 'SIGNED_OUT') {
             setIsStaff(false)
             setIsCustomer(false)
             setCustomerAccount(null)
+            setStaffLoading(false)
+            setCustomerLoading(false)
           } else if (event === 'TOKEN_REFRESHED') {
             // Session refreshed successfully
             console.log('Token refreshed successfully')

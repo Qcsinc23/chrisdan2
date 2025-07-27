@@ -18,16 +18,13 @@ export default function CustomerLoginPage() {
 
   // Enhanced redirect logic with proper customer status check
   useEffect(() => {
-    if (user && !customerLoading) {
+    if (user && !customerLoading && !loading) {
       const from = (location.state as any)?.from?.pathname || '/customer/dashboard'
       
-      // Wait a bit longer to ensure role status is properly determined
-      setTimeout(() => {
-        console.log('Customer authenticated, redirecting to dashboard...')
-        navigate(from, { replace: true })
-      }, 500)
+      console.log('User authenticated, redirecting to dashboard...', { user: user.email, customerLoading, loading })
+      navigate(from, { replace: true })
     }
-  }, [user, customerLoading, navigate, location.state])
+  }, [user, customerLoading, loading, navigate, location.state])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
