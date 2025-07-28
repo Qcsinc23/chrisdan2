@@ -32,7 +32,7 @@ export default function CustomerDocuments({ customerAccount }: CustomerDocuments
   })
   const [shipments, setShipments] = useState<any[]>([])
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null)
-  const [showImageViewer, setShowImageViewer] = useState(false)
+  const [showDocumentViewer, setShowDocumentViewer] = useState(false)
 
   const documentTypes = [
     { value: 'customs_form', label: 'Customs Form' },
@@ -240,26 +240,13 @@ export default function CustomerDocuments({ customerAccount }: CustomerDocuments
   }
 
   const handleViewDocument = (document: Document) => {
-    // For images, use the safe image viewer modal
-    if (document.mime_type.includes('image')) {
-      setSelectedDocument(document)
-      setShowImageViewer(true)
-    } else {
-      // For PDFs and other documents, open in new tab with proper error handling
-      try {
-        const newWindow = window.open(document.file_url, '_blank', 'noopener,noreferrer')
-        if (!newWindow) {
-          toast.error('Please allow popups to view documents')
-        }
-      } catch (error) {
-        console.error('Error opening document:', error)
-        toast.error('Failed to open document')
-      }
-    }
+    // Use universal document viewer for ALL document types - no new windows/tabs
+    setSelectedDocument(document)
+    setShowDocumentViewer(true)
   }
 
-  const closeImageViewer = () => {
-    setShowImageViewer(false)
+  const closeDocumentViewer = () => {
+    setShowDocumentViewer(false)
     setSelectedDocument(null)
   }
 
@@ -464,14 +451,14 @@ export default function CustomerDocuments({ customerAccount }: CustomerDocuments
         </div>
       )}
 
-      {/* Image Viewer Modal */}
-      {showImageViewer && selectedDocument && (
+      {/* Universal Document Viewer Modal */}
+      {showDocumentViewer && selectedDocument && (
         <div 
           className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
-          onClick={closeImageViewer}
+          onClick={closeDocumentViewer}
         >
           <div 
-            className="bg-white rounded-lg max-w-4xl max-h-[90vh] w-full overflow-hidden"
+            className="bg-white rounded-lg max-w-6xl max-h-[95vh] w-full overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
@@ -494,7 +481,7 @@ export default function CustomerDocuments({ customerAccount }: CustomerDocuments
                   <Download className="h-4 w-4" />
                 </a>
                 <button
-                  onClick={closeImageViewer}
+                  onClick={closeDocumentViewer}
                   className="inline-flex items-center p-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   title="Close"
                 >
@@ -503,21 +490,56 @@ export default function CustomerDocuments({ customerAccount }: CustomerDocuments
               </div>
             </div>
             
-            {/* Image Container */}
-            <div className="p-4 flex justify-center items-center bg-gray-50 max-h-[calc(90vh-120px)] overflow-auto">
-              <img
-                src={selectedDocument.file_url}
-                alt={selectedDocument.document_name}
-                className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
-                onError={(e) => {
-                  console.error('Error loading image:', e)
-                  toast.error('Failed to load image')
-                  closeImageViewer()
-                }}
-                onLoad={() => {
-                  // Image loaded successfully - no action needed
-                }}
-              />
+            {/* Document Content Container */}
+            <div className="p-4 bg-gray-50 max-h-[calc(95vh-120px)] overflow-auto">
+              {selectedDocument.mime_type.includes('image') ? (
+                // Image Viewer
+                <div className="flex justify-center items-center min-h-[400px]">
+                  <img
+                    src={selectedDocument.file_url}
+                    alt={selectedDocument.document_name}
+                    className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
+                    onError={(e) => {
+                      console.error('Error loading image:', e)
+                      toast.error('Failed to load image')
+                      closeDocumentViewer()
+                    }}
+                  />
+                </div>
+              ) : selectedDocument.mime_type.includes('pdf') ? (
+                // PDF Viewer - Embedded iframe (safe, no new window)
+                <div className="w-full h-[70vh] bg-white rounded-lg shadow-lg">
+                  <iframe
+                    src={selectedDocument.file_url}
+                    className="w-full h-full rounded-lg"
+                    title={selectedDocument.document_name}
+                    onError={() => {
+                      toast.error('Failed to load PDF. Please download to view.')
+                    }}
+                  />
+                </div>
+              ) : (
+                // Other document types - Show preview info and download option
+                <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
+                  <div className="text-6xl mb-4">
+                    {getDocumentIcon(selectedDocument.mime_type)}
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    {selectedDocument.document_name}
+                  </h3>
+                  <p className="text-gray-600 mb-4">
+                    This document type cannot be previewed in the browser.
+                  </p>
+                  <a
+                    href={selectedDocument.file_url}
+                    download
+                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download to View
+                  </a>
+                </div>
+              )}
             </div>
             
             {/* Modal Footer */}
