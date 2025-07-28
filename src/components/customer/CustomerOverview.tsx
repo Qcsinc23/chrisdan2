@@ -55,21 +55,25 @@ export default function CustomerOverview({ customerAccount }: CustomerOverviewPr
         console.log('Shipments table not available yet')
       }
 
-      // Try to load pending bookings from service_bookings table
+      // Try to load pending bookings using service-booking-system function
       try {
-        const { data: bookingsData, error: bookingsError } = await supabase
-          .from('service_bookings')
-          .select('*')
-          .eq('customer_id', customerAccount.id)
-          .eq('status', 'pending')
+        const { data: bookingsResult, error: bookingsError } = await supabase.functions.invoke('service-booking-system', {
+          body: {
+            action: 'get_customer_bookings',
+            bookingData: {
+              customerId: customerAccount.id
+            }
+          }
+        })
 
         if (bookingsError) {
-          console.log('Service bookings table not available yet:', bookingsError.message)
-        } else if (bookingsData) {
-          pendingBookingsCount = bookingsData.length
+          console.log('Service bookings function not available yet:', bookingsError.message)
+        } else if (bookingsResult?.data) {
+          // Count pending bookings
+          pendingBookingsCount = bookingsResult.data.filter((booking: any) => booking.status === 'pending').length
         }
       } catch (bookingsError) {
-        console.log('Service bookings table not available yet')
+        console.log('Service bookings function not available yet')
       }
 
       // Set recent shipments

@@ -60,22 +60,24 @@ export default function CustomerBookings({ customerAccount }: CustomerBookingsPr
 
   const loadBookings = async () => {
     try {
-      // Try to load bookings from service_bookings table directly
-      const { data, error } = await supabase
-        .from('service_bookings')
-        .select('*')
-        .eq('customer_id', customerAccount?.id || '')
-        .order('created_at', { ascending: false })
+      // Use service-booking-system function to get customer bookings
+      const { data, error } = await supabase.functions.invoke('service-booking-system', {
+        body: {
+          action: 'get_customer_bookings',
+          bookingData: {
+            customerId: customerAccount?.id || ''
+          }
+        }
+      })
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('Error loading bookings:', error)
-        // Don't show error toast, just set empty array
+        setBookings([])
+      } else {
+        setBookings(data?.data || [])
       }
-
-      setBookings(data || [])
     } catch (error: any) {
       console.error('Error loading bookings:', error)
-      // Don't show error toast, just set empty array
       setBookings([])
     } finally {
       setLoading(false)

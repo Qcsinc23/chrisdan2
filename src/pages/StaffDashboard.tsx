@@ -180,18 +180,14 @@ function ServiceBookingsManagement() {
   const loadServiceBookings = async () => {
     try {
       setLoading(true)
-      const { data, error } = await supabase
-        .from('service_bookings')
-        .select(`
-          *,
-          customer_accounts!inner(full_name, phone),
-          customer_addresses!pickup_address_id(street_address, city, country),
-          delivery_address:customer_addresses!delivery_address_id(street_address, city, country)
-        `)
-        .order('created_at', { ascending: false })
+      const { data, error } = await supabase.functions.invoke('service-booking-system', {
+        body: {
+          action: 'get_all_bookings'
+        }
+      })
 
       if (error) throw error
-      setBookings(data || [])
+      setBookings(data?.data || [])
     } catch (error: any) {
       console.error('Error loading service bookings:', error)
       toast.error('Failed to load service bookings')
