@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { FileText, Upload, Download, Trash2, Check, X, Eye } from 'lucide-react'
+import { FileText, Upload, Download, Trash2, Check, X, Eye, ZoomIn, ZoomOut } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import toast from 'react-hot-toast'
@@ -31,6 +31,8 @@ export default function CustomerDocuments({ customerAccount }: CustomerDocuments
     associatedShipmentId: ''
   })
   const [shipments, setShipments] = useState<any[]>([])
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null)
+  const [showImageViewer, setShowImageViewer] = useState(false)
 
   const documentTypes = [
     { value: 'customs_form', label: 'Customs Form' },
@@ -237,6 +239,30 @@ export default function CustomerDocuments({ customerAccount }: CustomerDocuments
     return '📁'
   }
 
+  const handleViewDocument = (document: Document) => {
+    // For images, use the safe image viewer modal
+    if (document.mime_type.includes('image')) {
+      setSelectedDocument(document)
+      setShowImageViewer(true)
+    } else {
+      // For PDFs and other documents, open in new tab with proper error handling
+      try {
+        const newWindow = window.open(document.file_url, '_blank', 'noopener,noreferrer')
+        if (!newWindow) {
+          toast.error('Please allow popups to view documents')
+        }
+      } catch (error) {
+        console.error('Error opening document:', error)
+        toast.error('Failed to open document')
+      }
+    }
+  }
+
+  const closeImageViewer = () => {
+    setShowImageViewer(false)
+    setSelectedDocument(null)
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -378,14 +404,12 @@ export default function CustomerDocuments({ customerAccount }: CustomerDocuments
                   </div>
                   
                   <div className="flex items-center space-x-2">
-                    <a
-                      href={document.file_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      onClick={() => handleViewDocument(document)}
                       className="inline-flex items-center p-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                     >
                       <Eye className="h-4 w-4" />
-                    </a>
+                    </button>
                     
                     <a
                       href={document.file_url}
@@ -436,6 +460,88 @@ export default function CustomerDocuments({ customerAccount }: CustomerDocuments
           <div className="bg-white rounded-lg p-6 flex items-center space-x-4">
             <LoadingSpinner size="md" />
             <span className="text-lg font-medium text-gray-900">Uploading document...</span>
+          </div>
+        </div>
+      )}
+
+      {/* Image Viewer Modal */}
+      {showImageViewer && selectedDocument && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+          onClick={closeImageViewer}
+        >
+          <div 
+            className="bg-white rounded-lg max-w-4xl max-h-[90vh] w-full overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex justify-between items-center p-4 border-b border-gray-200">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {selectedDocument.document_name}
+                </h3>
+                <p className="text-sm text-gray-600 capitalize">
+                  {selectedDocument.document_type.replace('_', ' ')} • {formatFileSize(selectedDocument.file_size)}
+                </p>
+              </div>
+              <div className="flex items-center space-x-2">
+                <a
+                  href={selectedDocument.file_url}
+                  download
+                  className="inline-flex items-center p-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  title="Download"
+                >
+                  <Download className="h-4 w-4" />
+                </a>
+                <button
+                  onClick={closeImageViewer}
+                  className="inline-flex items-center p-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  title="Close"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+            
+            {/* Image Container */}
+            <div className="p-4 flex justify-center items-center bg-gray-50 max-h-[calc(90vh-120px)] overflow-auto">
+              <img
+                src={selectedDocument.file_url}
+                alt={selectedDocument.document_name}
+                className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
+                onError={(e) => {
+                  console.error('Error loading image:', e)
+                  toast.error('Failed to load image')
+                  closeImageViewer()
+                }}
+                onLoad={() => {
+                  // Image loaded successfully - no action needed
+                }}
+              />
+            </div>
+            
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-gray-200 bg-gray-50">
+              <div className="flex justify-between items-center text-sm text-gray-600">
+                <div>
+                  <span className="font-medium">Uploaded:</span> {formatDate(selectedDocument.upload_date)}
+                  {selectedDocument.is_verified && (
+                    <span className="ml-3 inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                      <Check className="h-3 w-3 mr-1" />
+                      Verified
+                    </span>
+                  )}
+                </div>
+                <div className="text-xs text-gray-500">
+                  Click outside or press ESC to close
+                </div>
+              </div>
+              {selectedDocument.notes && (
+                <div className="mt-2 text-sm text-gray-600">
+                  <span className="font-medium">Notes:</span> {selectedDocument.notes}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
