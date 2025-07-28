@@ -24,6 +24,7 @@ import LoadingSpinner from '@/components/LoadingSpinner'
 import BarcodeScanner from '@/components/BarcodeScanner'
 import DashboardStats from '@/components/DashboardStats'
 import CrossConnectedDashboard from '@/components/CrossConnectedDashboard'
+import CustomerManagement from '@/components/CustomerManagement'
 import toast from 'react-hot-toast'
 
 interface Shipment {
@@ -555,6 +556,7 @@ export default function StaffDashboard() {
     { id: 'legacy', name: 'Legacy Overview', icon: BarChart3, href: '/staff/dashboard/legacy' },
     { id: 'shipments', name: 'Shipments', icon: Package, href: '/staff/dashboard/shipments' },
     { id: 'bookings', name: 'Service Bookings', icon: Calendar, href: '/staff/dashboard/bookings' },
+    { id: 'customers', name: 'Customer Management', icon: Users, href: '/staff/dashboard/customers' },
     { id: 'scanner', name: 'Barcode Scanner', icon: Scan, href: '/staff/dashboard/scanner' },
   ]
 
@@ -641,6 +643,9 @@ export default function StaffDashboard() {
               } />
               <Route path="/bookings" element={
                 <ServiceBookingsManagement />
+              } />
+              <Route path="/customers" element={
+                <CustomerManagement />
               } />
               <Route path="/scanner" element={<BarcodeScanner />} />
             </Routes>
