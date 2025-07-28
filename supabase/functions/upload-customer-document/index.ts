@@ -12,7 +12,7 @@ Deno.serve(async (req) => {
     }
 
     try {
-        const { fileData, fileName, documentType, customerId, shipmentId } = await req.json();
+        const { fileData, fileName, documentType, customerId, shipmentId, mimeType: explicitMimeType } = await req.json();
 
         if (!fileData || !fileName || !documentType || !customerId) {
             throw new Error('File data, filename, document type, and customer ID are required');
@@ -27,7 +27,11 @@ Deno.serve(async (req) => {
 
         // Extract base64 data from data URL
         const base64Data = fileData.split(',')[1];
-        const mimeType = fileData.split(';')[0].split(':')[1];
+        // Use explicit MIME type if provided, otherwise extract from data URL
+        const mimeType = explicitMimeType || fileData.split(';')[0].split(':')[1];
+        
+        // Ensure PDF MIME type is correct
+        const finalMimeType = fileName.toLowerCase().endsWith('.pdf') ? 'application/pdf' : mimeType;
 
         // Convert base64 to binary
         const binaryData = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));

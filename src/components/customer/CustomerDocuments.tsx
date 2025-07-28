@@ -111,9 +111,13 @@ export default function CustomerDocuments({ customerAccount }: CustomerDocuments
       return
     }
 
-    // Validate file type
+    // Validate file type - be more flexible with PDF detection
     const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
-    if (!allowedTypes.includes(file.type)) {
+    const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
+    const isImage = file.type.startsWith('image/')
+    const isWord = file.type.includes('word') || file.name.toLowerCase().endsWith('.doc') || file.name.toLowerCase().endsWith('.docx')
+    
+    if (!isPDF && !isImage && !isWord) {
       toast.error('Please upload PDF, Word document, or image files only')
       return
     }
@@ -121,13 +125,26 @@ export default function CustomerDocuments({ customerAccount }: CustomerDocuments
     setUploading(true)
     
     try {
-      // Convert file to base64
+      // Convert file to base64 with better error handling
       const fileDataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader()
-        reader.onload = () => resolve(reader.result as string)
-        reader.onerror = reject
+        reader.onload = () => {
+          const result = reader.result as string
+          if (!result) {
+            reject(new Error('Failed to read file'))
+            return
+          }
+          resolve(result)
+        }
+        reader.onerror = () => reject(new Error('Failed to read file'))
         reader.readAsDataURL(file)
       })
+
+      // Ensure we have the correct MIME type for PDFs
+      let mimeType = file.type
+      if (isPDF && (!mimeType || mimeType === '')) {
+        mimeType = 'application/pdf'
+      }
 
       const { data, error } = await supabase.functions.invoke('upload-customer-document', {
         body: {
@@ -135,7 +152,8 @@ export default function CustomerDocuments({ customerAccount }: CustomerDocuments
           fileName: file.name,
           documentType: uploadData.documentType,
           customerId: customerAccount.id,
-          shipmentId: uploadData.associatedShipmentId || null
+          shipmentId: uploadData.associatedShipmentId || null,
+          mimeType: mimeType // Pass the MIME type explicitly
         }
       })
 
