@@ -198,10 +198,15 @@ function ServiceBookingsManagement() {
 
   const updateBookingStatus = async (bookingId: string, newStatus: string) => {
     try {
-      const { error } = await supabase
-        .from('service_bookings')
-        .update({ status: newStatus, updated_at: new Date().toISOString() })
-        .eq('id', bookingId)
+      const { data, error } = await supabase.functions.invoke('service-booking-system', {
+        body: {
+          action: 'update_booking_status',
+          bookingData: {
+            bookingId: bookingId,
+            status: newStatus
+          }
+        }
+      })
 
       if (error) throw error
       
