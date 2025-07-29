@@ -1,6 +1,10 @@
 // Cross-connected workflow orchestrator
 // Unifies customer, staff, and business operations in real-time
-Deno.serve(async (req) => {
+
+// Import shared types
+import '../_shared/types.ts'
+
+Deno.serve(async (req: Request): Promise<Response> => {
     const corsHeaders = {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -35,9 +39,11 @@ Deno.serve(async (req) => {
             channel = 'in_app'
         } = await req.json();
 
+        let result;
+        
         switch (action) {
             case 'create_workflow':
-                return await createWorkflow({
+                result = await createWorkflow({
                     trackingNumber,
                     customerId,
                     workflowType,
@@ -47,25 +53,28 @@ Deno.serve(async (req) => {
                     supabaseUrl,
                     serviceRoleKey
                 });
+                break;
 
             case 'assign_staff':
-                return await assignStaff({
+                result = await assignStaff({
                     trackingNumber,
                     staffId,
                     supabaseUrl,
                     serviceRoleKey
                 });
+                break;
 
             case 'update_status':
-                return await updateWorkflowStatus({
+                result = await updateWorkflowStatus({
                     trackingNumber,
                     newStatus: messageContent,
                     supabaseUrl,
                     serviceRoleKey
                 });
+                break;
 
             case 'send_communication':
-                return await sendCommunication({
+                result = await sendCommunication({
                     trackingNumber,
                     participantType: 'customer',
                     participantId: customerId,
@@ -75,23 +84,30 @@ Deno.serve(async (req) => {
                     supabaseUrl,
                     serviceRoleKey
                 });
+                break;
 
             case 'get_unified_timeline':
-                return await getUnifiedTimeline({
+                result = await getUnifiedTimeline({
                     trackingNumber,
                     supabaseUrl,
                     serviceRoleKey
                 });
+                break;
 
             case 'get_business_insights':
-                return await getBusinessInsights({
+                result = await getBusinessInsights({
                     supabaseUrl,
                     serviceRoleKey
                 });
+                break;
 
             default:
                 throw new Error('Invalid action specified');
         }
+
+        return new Response(JSON.stringify(result), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
 
     } catch (error) {
         console.error('Workflow orchestrator error:', error);

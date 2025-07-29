@@ -79,7 +79,7 @@ export default function CustomerManagement() {
 
       // Combine customer data with auth data
       const enrichedCustomers = customersData?.map(customer => {
-        const authUser = users?.find(user => user.id === customer.user_id)
+        const authUser = (users || []).find(user => user && user.id === customer.user_id)
         return {
           ...customer,
           email: authUser?.email || 'No email',

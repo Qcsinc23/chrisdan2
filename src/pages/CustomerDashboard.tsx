@@ -12,7 +12,7 @@ import {
   Archive,
   AlertCircle
 } from 'lucide-react'
-import { useAuth } from '@/contexts/AuthContext'
+import { useAuth, useUserRole } from '@/contexts/AuthContext'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import toast from 'react-hot-toast'
 
@@ -26,7 +26,8 @@ import CustomerSettings from '@/components/customer/CustomerSettings'
 import CustomerOverview from '@/components/customer/CustomerOverview'
 
 export default function CustomerDashboard() {
-  const { user, customerAccount, customerLoading, isCustomer, updateCustomerAccount } = useAuth()
+  const { user } = useAuth()
+  const { customerAccount, customerLoading, isCustomer, updateCustomerAccount } = useUserRole()
   const location = useLocation()
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('overview')

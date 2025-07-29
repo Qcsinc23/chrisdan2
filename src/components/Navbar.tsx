@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { Menu, X, Package, Phone, Mail } from 'lucide-react'
-import { useAuth } from '@/contexts/AuthContext'
+import { useAuth, useUserRole } from '@/contexts/AuthContext'
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
   const location = useLocation()
-  const { user, isStaff, isCustomer, signOut } = useAuth()
+  const { user, signOut } = useAuth()
+  const { isStaff, isCustomer } = useUserRole()
 
   const navigation = [
     { name: 'Home', href: '/' },

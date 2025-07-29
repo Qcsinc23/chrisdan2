@@ -9,26 +9,25 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
   signOut: () => Promise<void>
   signUp: (email: string, password: string, metadata?: any) => Promise<{ success: boolean; error?: string }>
+  refreshSession: () => Promise<void>
+}
+
+interface UserRoleContextType {
   isStaff: boolean
   isCustomer: boolean
   staffLoading: boolean
   customerLoading: boolean
   customerAccount: any
-  refreshSession: () => Promise<void>
   updateCustomerAccount: (account: any) => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const UserRoleContext = createContext<UserRoleContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
-  const [isStaff, setIsStaff] = useState(false)
-  const [isCustomer, setIsCustomer] = useState(false)
-  const [staffLoading, setStaffLoading] = useState(false)
-  const [customerLoading, setCustomerLoading] = useState(false)
-  const [customerAccount, setCustomerAccount] = useState(null)
 
   // Enhanced session refresh with error handling
   const refreshSession = useCallback(async () => {
@@ -38,13 +37,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       setSession(newSession)
       setUser(newSession?.user ?? null)
-      
-      if (newSession?.user) {
-        await Promise.all([
-          checkStaffStatus(newSession.user.email!),
-          checkCustomerStatus(newSession.user.id)
-        ])
-      }
     } catch (error) {
       console.error('Error refreshing session:', error)
     }
@@ -65,9 +57,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setLoading(false)
             setUser(null)
             setSession(null)
-            setIsStaff(false)
-            setIsCustomer(false)
-            setCustomerAccount(null)
           }
         }, 15000) // 15 second timeout
         
@@ -87,15 +76,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (mounted) {
           setSession(initialSession)
           setUser(initialSession?.user ?? null)
-          
-          if (initialSession?.user) {
-            // Check both statuses but don't let them block the loading indefinitely
-            await Promise.allSettled([
-              checkStaffStatus(initialSession.user.email!),
-              checkCustomerStatus(initialSession.user.id)
-            ])
-          }
-          
           setLoading(false)
         }
       } catch (error) {
@@ -117,25 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setSession(session)
           setUser(session?.user ?? null)
           
-          if (event === 'SIGNED_IN' && session?.user) {
-            // Ensure role checks complete before allowing redirects
-            try {
-              await Promise.all([
-                checkStaffStatus(session.user.email!),
-                checkCustomerStatus(session.user.id)
-              ])
-              console.log('Role checks completed after sign in')
-            } catch (error) {
-              console.error('Error during role checks:', error)
-              // Continue anyway to prevent blocking login
-            }
-          } else if (event === 'SIGNED_OUT') {
-            setIsStaff(false)
-            setIsCustomer(false)
-            setCustomerAccount(null)
-            setStaffLoading(false)
-            setCustomerLoading(false)
-          } else if (event === 'TOKEN_REFRESHED') {
+          if (event === 'TOKEN_REFRESHED') {
             // Session refreshed successfully
             console.log('Token refreshed successfully')
           }
@@ -156,10 +118,181 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       subscription.unsubscribe()
       clearInterval(refreshInterval)
     }
+  }, [refreshSession])
+
+  // Enhanced sign in with proper error handling
+  const signIn = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { error, data } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      })
+
+      if (error) {
+        console.error('Sign in error:', error)
+        let errorMessage = 'Failed to sign in'
+        
+        switch (error.message) {
+          case 'Invalid login credentials':
+            errorMessage = 'Invalid email or password'
+            break
+          case 'Email not confirmed':
+            errorMessage = 'Please check your email to confirm your account'
+            break
+          case 'Too many requests':
+            errorMessage = 'Too many login attempts. Please try again later'
+            break
+          default:
+            errorMessage = error.message || 'Failed to sign in'
+        }
+        
+        toast.error(errorMessage)
+        return { success: false, error: errorMessage }
+      }
+
+      if (data.user) {
+        toast.success('Welcome back!')
+        return { success: true }
+      }
+
+      return { success: false, error: 'Unknown error occurred' }
+    } catch (error: any) {
+      console.error('Unexpected sign in error:', error)
+      const errorMessage = 'An unexpected error occurred. Please try again.'
+      toast.error(errorMessage)
+      return { success: false, error: errorMessage }
+    }
   }, [])
 
+  // Enhanced sign up with email verification handling
+  const signUp = useCallback(async (email: string, password: string, metadata: any = {}): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const { error, data } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            ...metadata,
+            full_name: metadata.fullName || email.split('@')[0],
+            phone: metadata.phone || ''
+          },
+          emailRedirectTo: `${window.location.origin}/customer/login?message=Account created successfully. Please check your email to verify your account.`
+        }
+      })
+
+      if (error) {
+        console.error('Sign up error:', error)
+        let errorMessage = 'Failed to create account'
+        
+        switch (error.message) {
+          case 'User already registered':
+            errorMessage = 'An account with this email already exists'
+            break
+          case 'Password should be at least 6 characters':
+            errorMessage = 'Password must be at least 6 characters'
+            break
+          default:
+            errorMessage = error.message || 'Failed to create account'
+        }
+        
+        toast.error(errorMessage)
+        return { success: false, error: errorMessage }
+      }
+
+      if (data.user) {
+        if (data.session) {
+          // Email verification disabled - user is logged in
+          // Automatically create customer account
+          try {
+            const { error: accountError } = await supabase.functions.invoke('manage-customer-account', {
+              body: {
+                action: 'create_account',
+                accountData: {
+                  fullName: metadata.fullName || metadata.full_name || data.user.email?.split('@')[0] || 'Customer',
+                  phone: metadata.phone || '',
+                  whatsappNotifications: true,
+                  emailNotifications: true,
+                  smsNotifications: false
+                }
+              }
+            })
+
+            if (accountError) {
+              console.error('Error creating customer account:', accountError)
+              toast.success('Account created! Please complete your profile in settings.')
+            } else {
+              console.log('Customer account created successfully')
+              toast.success('Account created successfully!')
+            }
+          } catch (error) {
+            console.error('Error creating customer account:', error)
+            toast.success('Account created! Please complete your profile in settings.')
+          }
+        } else {
+          // Email verification enabled - user needs to check email
+          toast.success('Account created! Please check your email to verify your account')
+        }
+        return { success: true }
+      }
+
+      return { success: false, error: 'Unknown error occurred' }
+    } catch (error: any) {
+      console.error('Unexpected sign up error:', error)
+      const errorMessage = 'An unexpected error occurred. Please try again.'
+      toast.error(errorMessage)
+      return { success: false, error: errorMessage }
+    }
+  }, [])
+
+  // Enhanced sign out with cleanup
+  const signOut = useCallback(async () => {
+    try {
+      const { error } = await supabase.auth.signOut()
+      
+      if (error) {
+        console.error('Sign out error:', error)
+        toast.error(error.message || 'Failed to sign out')
+        throw error
+      }
+
+      // Clear local state
+      setUser(null)
+      setSession(null)
+      
+      toast.success('Signed out successfully!')
+    } catch (error) {
+      console.error('Error during sign out:', error)
+      throw error
+    }
+  }, [])
+
+  const value = {
+    user,
+    loading,
+    signIn,
+    signUp,
+    signOut,
+    refreshSession
+  }
+
+  return (
+    <AuthContext.Provider value={value}>
+      <UserRoleProvider user={user}>
+        {children}
+      </UserRoleProvider>
+    </AuthContext.Provider>
+  )
+}
+
+function UserRoleProvider({ children, user }: { children: React.ReactNode; user: User | null }) {
+  const [isStaff, setIsStaff] = useState(false)
+  const [isCustomer, setIsCustomer] = useState(false)
+  const [staffLoading, setStaffLoading] = useState(false)
+  const [customerLoading, setCustomerLoading] = useState(false)
+  const [customerAccount, setCustomerAccount] = useState(null)
+
   // Enhanced staff status check with better error handling
-  const checkStaffStatus = async (email: string) => {
+  const checkStaffStatus = useCallback(async (email: string) => {
     if (!email) {
       setStaffLoading(false)
       return
@@ -253,10 +386,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setStaffLoading(false)
       }, 1000)
     }
-  }
+  }, [])
 
   // Enhanced customer status check with race condition prevention
-  const checkCustomerStatus = async (userId: string): Promise<boolean> => {
+  const checkCustomerStatus = useCallback(async (userId: string): Promise<boolean> => {
     if (!userId) {
       setCustomerLoading(false)
       return false
@@ -314,181 +447,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setCustomerLoading(false)
       return true
     }
-  }
+  }, [])
 
-  // Enhanced sign in with proper error handling
-  const signIn = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
-    try {
-      const { error, data } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      })
-
-      if (error) {
-        console.error('Sign in error:', error)
-        let errorMessage = 'Failed to sign in'
-        
-        switch (error.message) {
-          case 'Invalid login credentials':
-            errorMessage = 'Invalid email or password'
-            break
-          case 'Email not confirmed':
-            errorMessage = 'Please check your email to confirm your account'
-            break
-          case 'Too many requests':
-            errorMessage = 'Too many login attempts. Please try again later'
-            break
-          default:
-            errorMessage = error.message || 'Failed to sign in'
-        }
-        
-        toast.error(errorMessage)
-        return { success: false, error: errorMessage }
-      }
-
-      if (data.user) {
-        toast.success('Welcome back!')
-        return { success: true }
-      }
-
-      return { success: false, error: 'Unknown error occurred' }
-    } catch (error: any) {
-      console.error('Unexpected sign in error:', error)
-      const errorMessage = 'An unexpected error occurred. Please try again.'
-      toast.error(errorMessage)
-      return { success: false, error: errorMessage }
-    }
-  }
-
-  // Enhanced sign up with email verification handling
-  const signUp = async (email: string, password: string, metadata: any = {}): Promise<{ success: boolean; error?: string }> => {
-    try {
-      const { error, data } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            ...metadata,
-            full_name: metadata.fullName || email.split('@')[0],
-            phone: metadata.phone || ''
-          },
-          emailRedirectTo: `${window.location.origin}/customer/login?message=Account created successfully. Please check your email to verify your account.`
-        }
-      })
-
-      if (error) {
-        console.error('Sign up error:', error)
-        let errorMessage = 'Failed to create account'
-        
-        switch (error.message) {
-          case 'User already registered':
-            errorMessage = 'An account with this email already exists'
-            break
-          case 'Password should be at least 6 characters':
-            errorMessage = 'Password must be at least 6 characters'
-            break
-          default:
-            errorMessage = error.message || 'Failed to create account'
-        }
-        
-        toast.error(errorMessage)
-        return { success: false, error: errorMessage }
-      }
-
-      if (data.user) {
-        if (data.session) {
-          // Email verification disabled - user is logged in
-          // Automatically create customer account
-          try {
-            const { error: accountError } = await supabase.functions.invoke('manage-customer-account', {
-              body: {
-                action: 'create_account',
-                accountData: {
-                  fullName: metadata.fullName || metadata.full_name || data.user.email?.split('@')[0] || 'Customer',
-                  phone: metadata.phone || '',
-                  whatsappNotifications: true,
-                  emailNotifications: true,
-                  smsNotifications: false
-                }
-              }
-            })
-
-            if (accountError) {
-              console.error('Error creating customer account:', accountError)
-              toast.success('Account created! Please complete your profile in settings.')
-            } else {
-              console.log('Customer account created successfully')
-              toast.success('Account created successfully!')
-            }
-          } catch (error) {
-            console.error('Error creating customer account:', error)
-            toast.success('Account created! Please complete your profile in settings.')
-          }
-        } else {
-          // Email verification enabled - user needs to check email
-          toast.success('Account created! Please check your email to verify your account')
-        }
-        return { success: true }
-      }
-
-      return { success: false, error: 'Unknown error occurred' }
-    } catch (error: any) {
-      console.error('Unexpected sign up error:', error)
-      const errorMessage = 'An unexpected error occurred. Please try again.'
-      toast.error(errorMessage)
-      return { success: false, error: errorMessage }
-    }
-  }
-
-  // Enhanced sign out with cleanup
-  const signOut = async () => {
-    try {
-      const { error } = await supabase.auth.signOut()
-      
-      if (error) {
-        console.error('Sign out error:', error)
-        toast.error(error.message || 'Failed to sign out')
-        throw error
-      }
-
-      // Clear local state
-      setUser(null)
-      setSession(null)
+  // Check user roles when user changes
+  useEffect(() => {
+    if (user?.email) {
+      Promise.all([
+        checkStaffStatus(user.email),
+        checkCustomerStatus(user.id)
+      ])
+    } else {
       setIsStaff(false)
       setIsCustomer(false)
       setCustomerAccount(null)
-      
-      toast.success('Signed out successfully!')
-    } catch (error) {
-      console.error('Error during sign out:', error)
-      throw error
+      setStaffLoading(false)
+      setCustomerLoading(false)
     }
-  }
+  }, [user, checkStaffStatus, checkCustomerStatus])
 
   // Update customer account state
-  const updateCustomerAccount = (account: any) => {
+  const updateCustomerAccount = useCallback((account: any) => {
     setCustomerAccount(account)
-  }
+  }, [])
 
   const value = {
-    user,
-    loading,
-    signIn,
-    signUp,
-    signOut,
     isStaff,
     isCustomer,
     staffLoading,
     customerLoading,
     customerAccount,
-    refreshSession,
     updateCustomerAccount
   }
 
   return (
-    <AuthContext.Provider value={value}>
+    <UserRoleContext.Provider value={value}>
       {children}
-    </AuthContext.Provider>
+    </UserRoleContext.Provider>
   )
 }
 
@@ -498,4 +492,23 @@ export function useAuth() {
     throw new Error('useAuth must be used within an AuthProvider')
   }
   return context
+}
+
+export function useUserRole() {
+  const context = useContext(UserRoleContext)
+  if (context === undefined) {
+    throw new Error('useUserRole must be used within a UserRoleProvider')
+  }
+  return context
+}
+
+// Combined hook for backward compatibility
+export function useAuthWithRole() {
+  const auth = useAuth()
+  const role = useUserRole()
+  
+  return {
+    ...auth,
+    ...role
+  }
 }

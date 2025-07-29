@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
 import { Navigate, useLocation, Link, useNavigate } from 'react-router-dom'
 import { Package, Lock, Mail, Eye, EyeOff } from 'lucide-react'
-import { useAuth } from '@/contexts/AuthContext'
+import { useAuth, useUserRole } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import toast from 'react-hot-toast'
 
 export default function StaffLoginPage() {
-  const { signIn, user, isStaff, staffLoading } = useAuth()
+  const { signIn, user } = useAuth()
+  const { isStaff, staffLoading } = useUserRole()
   const navigate = useNavigate()
   const location = useLocation()
   const [email, setEmail] = useState('')

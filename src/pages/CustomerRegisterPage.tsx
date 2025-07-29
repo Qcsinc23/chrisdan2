@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { UserPlus, Mail, Lock, User, Phone, Eye, EyeOff, CheckCircle, XCircle } from 'lucide-react'
-import { useAuth } from '@/contexts/AuthContext'
+import { useAuth, useUserRole } from '@/contexts/AuthContext'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import toast from 'react-hot-toast'
 
 export default function CustomerRegisterPage() {
-  const { signUp, user, isCustomer, customerLoading } = useAuth()
+  const { signUp, user } = useAuth()
+  const { isCustomer, customerLoading } = useUserRole()
   const navigate = useNavigate()
   const location = useLocation()
   const [loading, setLoading] = useState(false)

@@ -7,118 +7,356 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instanciate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "12.2.3 (519615d)"
+  }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          operationName?: string
+          query?: string
+          variables?: Json
+          extensions?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
-      chat_messages: {
+      business_metrics: {
         Row: {
-          attachment_url: string | null
-          chat_room_id: string
+          actual_revenue: number | null
+          assigned_staff_id: string | null
+          business_priority_score: number | null
+          calculated_at: string | null
+          communication_responsiveness: number | null
+          created_at: string | null
+          customer_engagement_level: number | null
+          customer_lifetime_value: number | null
+          customer_retention_risk: number | null
+          customer_satisfaction_score: number | null
+          destination_country: string | null
+          documentation_completeness: number | null
+          estimated_revenue: number | null
+          first_response_time_minutes: number | null
           id: string
-          is_read: boolean | null
-          message_content: string
-          message_type: string | null
-          sender_id: string | null
-          sender_type: string
-          sent_at: string | null
+          marketing_channel: string | null
+          origin_region: string | null
+          processing_time_minutes: number | null
+          referral_source: string | null
+          repeat_customer: boolean | null
+          resolution_time_minutes: number | null
+          service_quality_score: number | null
+          shipping_route: string | null
+          sla_compliance: boolean | null
+          staff_customer_rating: number | null
+          staff_efficiency_score: number | null
+          staff_workload_impact: number | null
+          updated_at: string | null
+          workflow_id: string | null
         }
         Insert: {
-          attachment_url?: string | null
-          chat_room_id: string
+          actual_revenue?: number | null
+          assigned_staff_id?: string | null
+          business_priority_score?: number | null
+          calculated_at?: string | null
+          communication_responsiveness?: number | null
+          created_at?: string | null
+          customer_engagement_level?: number | null
+          customer_lifetime_value?: number | null
+          customer_retention_risk?: number | null
+          customer_satisfaction_score?: number | null
+          destination_country?: string | null
+          documentation_completeness?: number | null
+          estimated_revenue?: number | null
+          first_response_time_minutes?: number | null
           id?: string
-          is_read?: boolean | null
-          message_content: string
-          message_type?: string | null
-          sender_id?: string | null
-          sender_type: string
-          sent_at?: string | null
+          marketing_channel?: string | null
+          origin_region?: string | null
+          processing_time_minutes?: number | null
+          referral_source?: string | null
+          repeat_customer?: boolean | null
+          resolution_time_minutes?: number | null
+          service_quality_score?: number | null
+          shipping_route?: string | null
+          sla_compliance?: boolean | null
+          staff_customer_rating?: number | null
+          staff_efficiency_score?: number | null
+          staff_workload_impact?: number | null
+          updated_at?: string | null
+          workflow_id?: string | null
         }
         Update: {
-          attachment_url?: string | null
-          chat_room_id?: string
+          actual_revenue?: number | null
+          assigned_staff_id?: string | null
+          business_priority_score?: number | null
+          calculated_at?: string | null
+          communication_responsiveness?: number | null
+          created_at?: string | null
+          customer_engagement_level?: number | null
+          customer_lifetime_value?: number | null
+          customer_retention_risk?: number | null
+          customer_satisfaction_score?: number | null
+          destination_country?: string | null
+          documentation_completeness?: number | null
+          estimated_revenue?: number | null
+          first_response_time_minutes?: number | null
           id?: string
-          is_read?: boolean | null
-          message_content?: string
-          message_type?: string | null
-          sender_id?: string | null
-          sender_type?: string
-          sent_at?: string | null
+          marketing_channel?: string | null
+          origin_region?: string | null
+          processing_time_minutes?: number | null
+          referral_source?: string | null
+          repeat_customer?: boolean | null
+          resolution_time_minutes?: number | null
+          service_quality_score?: number | null
+          shipping_route?: string | null
+          sla_compliance?: boolean | null
+          staff_customer_rating?: number | null
+          staff_efficiency_score?: number | null
+          staff_workload_impact?: number | null
+          updated_at?: string | null
+          workflow_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "business_metrics_assigned_staff_id_fkey"
+            columns: ["assigned_staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_metrics_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      communication_threads: {
+        Row: {
+          action_required: boolean | null
+          action_type: string | null
+          automation_rule: string | null
+          channel: string | null
+          created_at: string | null
+          delivery_error: string | null
+          delivery_status: string | null
+          id: string
+          is_automated: boolean | null
+          is_business_synced: boolean | null
+          is_customer_synced: boolean | null
+          is_important: boolean | null
+          is_read: boolean | null
+          is_staff_synced: boolean | null
+          message_content: string
+          message_subject: string | null
+          message_type: string
+          parent_message_id: string | null
+          participant_id: string | null
+          participant_type: string
+          read_at: string | null
+          related_entity_id: string | null
+          related_entity_type: string | null
+          responded_at: string | null
+          response_count: number | null
+          workflow_id: string | null
+        }
+        Insert: {
+          action_required?: boolean | null
+          action_type?: string | null
+          automation_rule?: string | null
+          channel?: string | null
+          created_at?: string | null
+          delivery_error?: string | null
+          delivery_status?: string | null
+          id?: string
+          is_automated?: boolean | null
+          is_business_synced?: boolean | null
+          is_customer_synced?: boolean | null
+          is_important?: boolean | null
+          is_read?: boolean | null
+          is_staff_synced?: boolean | null
+          message_content: string
+          message_subject?: string | null
+          message_type: string
+          parent_message_id?: string | null
+          participant_id?: string | null
+          participant_type: string
+          read_at?: string | null
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          responded_at?: string | null
+          response_count?: number | null
+          workflow_id?: string | null
+        }
+        Update: {
+          action_required?: boolean | null
+          action_type?: string | null
+          automation_rule?: string | null
+          channel?: string | null
+          created_at?: string | null
+          delivery_error?: string | null
+          delivery_status?: string | null
+          id?: string
+          is_automated?: boolean | null
+          is_business_synced?: boolean | null
+          is_customer_synced?: boolean | null
+          is_important?: boolean | null
+          is_read?: boolean | null
+          is_staff_synced?: boolean | null
+          message_content?: string
+          message_subject?: string | null
+          message_type?: string
+          parent_message_id?: string | null
+          participant_id?: string | null
+          participant_type?: string
+          read_at?: string | null
+          related_entity_id?: string | null
+          related_entity_type?: string | null
+          responded_at?: string | null
+          response_count?: number | null
+          workflow_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "communication_threads_parent_message_id_fkey"
+            columns: ["parent_message_id"]
+            isOneToOne: false
+            referencedRelation: "communication_threads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "communication_threads_parent_message_id_fkey"
+            columns: ["parent_message_id"]
+            isOneToOne: false
+            referencedRelation: "unified_communication_timeline"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "communication_threads_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_instances"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       consolidation_items: {
         Row: {
-          added_at: string | null
-          consolidation_request_id: string
+          added_date: string | null
+          consolidation_id: string | null
           dimensions: string | null
           id: string
           package_description: string | null
-          shipment_id: string
+          tracking_number: string
           weight_lbs: number | null
         }
         Insert: {
-          added_at?: string | null
-          consolidation_request_id: string
+          added_date?: string | null
+          consolidation_id?: string | null
           dimensions?: string | null
           id?: string
           package_description?: string | null
-          shipment_id: string
+          tracking_number: string
           weight_lbs?: number | null
         }
         Update: {
-          added_at?: string | null
-          consolidation_request_id?: string
+          added_date?: string | null
+          consolidation_id?: string | null
           dimensions?: string | null
           id?: string
           package_description?: string | null
-          shipment_id?: string
+          tracking_number?: string
           weight_lbs?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "consolidation_items_consolidation_id_fkey"
+            columns: ["consolidation_id"]
+            isOneToOne: false
+            referencedRelation: "consolidation_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_consolidation_items_consolidation"
+            columns: ["consolidation_id"]
+            isOneToOne: false
+            referencedRelation: "consolidation_requests"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       consolidation_requests: {
         Row: {
-          consolidated_shipment_id: string | null
-          created_at: string | null
+          consolidation_date: string | null
+          consolidation_name: string
           customer_id: string
-          destination_country: string | null
-          estimated_savings: number | null
           id: string
-          request_date: string | null
-          special_instructions: string | null
+          notes: string | null
+          requested_date: string | null
+          shipped_date: string | null
           status: string | null
           total_packages: number | null
           total_weight: number | null
-          updated_at: string | null
         }
         Insert: {
-          consolidated_shipment_id?: string | null
-          created_at?: string | null
+          consolidation_date?: string | null
+          consolidation_name: string
           customer_id: string
-          destination_country?: string | null
-          estimated_savings?: number | null
           id?: string
-          request_date?: string | null
-          special_instructions?: string | null
+          notes?: string | null
+          requested_date?: string | null
+          shipped_date?: string | null
           status?: string | null
           total_packages?: number | null
           total_weight?: number | null
-          updated_at?: string | null
         }
         Update: {
-          consolidated_shipment_id?: string | null
-          created_at?: string | null
+          consolidation_date?: string | null
+          consolidation_name?: string
           customer_id?: string
-          destination_country?: string | null
-          estimated_savings?: number | null
           id?: string
-          request_date?: string | null
-          special_instructions?: string | null
+          notes?: string | null
+          requested_date?: string | null
+          shipped_date?: string | null
           status?: string | null
           total_packages?: number | null
           total_weight?: number | null
-          updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_consolidation_customer"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_consolidation_customer"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_insights"
+            referencedColumns: ["customer_email"]
+          },
+        ]
       }
       customer_accounts: {
         Row: {
@@ -160,7 +398,15 @@ export type Database = {
           user_id?: string | null
           whatsapp_notifications?: boolean | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_customer_accounts_primary_address"
+            columns: ["primary_address_id"]
+            isOneToOne: false
+            referencedRelation: "customer_addresses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       customer_addresses: {
         Row: {
@@ -202,7 +448,22 @@ export type Database = {
           street_address?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_customer_addresses_customer"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_customer_addresses_customer"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_insights"
+            referencedColumns: ["customer_email"]
+          },
+        ]
       }
       customer_documents: {
         Row: {
@@ -244,163 +505,22 @@ export type Database = {
           notes?: string | null
           upload_date?: string | null
         }
-        Relationships: []
-      }
-      customers: {
-        Row: {
-          address: string | null
-          created_at: string | null
-          email: string
-          frequent_shipper: boolean | null
-          full_name: string
-          id: string
-          phone: string | null
-          total_shipments: number | null
-        }
-        Insert: {
-          address?: string | null
-          created_at?: string | null
-          email: string
-          frequent_shipper?: boolean | null
-          full_name: string
-          id?: string
-          phone?: string | null
-          total_shipments?: number | null
-        }
-        Update: {
-          address?: string | null
-          created_at?: string | null
-          email?: string
-          frequent_shipper?: boolean | null
-          full_name?: string
-          id?: string
-          phone?: string | null
-          total_shipments?: number | null
-        }
-        Relationships: []
-      }
-      delivery_proof: {
-        Row: {
-          delivered_at: string | null
-          delivered_by: string | null
-          delivery_location: string | null
-          delivery_notes: string | null
-          delivery_photo_url: string | null
-          id: string
-          recipient_name: string | null
-          shipment_id: string
-          signature_data: string | null
-          signature_image_url: string | null
-          verification_code: string | null
-        }
-        Insert: {
-          delivered_at?: string | null
-          delivered_by?: string | null
-          delivery_location?: string | null
-          delivery_notes?: string | null
-          delivery_photo_url?: string | null
-          id?: string
-          recipient_name?: string | null
-          shipment_id: string
-          signature_data?: string | null
-          signature_image_url?: string | null
-          verification_code?: string | null
-        }
-        Update: {
-          delivered_at?: string | null
-          delivered_by?: string | null
-          delivery_location?: string | null
-          delivery_notes?: string | null
-          delivery_photo_url?: string | null
-          id?: string
-          recipient_name?: string | null
-          shipment_id?: string
-          signature_data?: string | null
-          signature_image_url?: string | null
-          verification_code?: string | null
-        }
-        Relationships: []
-      }
-      notification_logs: {
-        Row: {
-          channel: string
-          created_at: string | null
-          customer_id: string | null
-          error_message: string | null
-          id: string
-          message_content: string | null
-          notification_type: string
-          recipient: string
-          sent_at: string | null
-          shipment_id: string | null
-          status: string | null
-          subject: string | null
-        }
-        Insert: {
-          channel: string
-          created_at?: string | null
-          customer_id?: string | null
-          error_message?: string | null
-          id?: string
-          message_content?: string | null
-          notification_type: string
-          recipient: string
-          sent_at?: string | null
-          shipment_id?: string | null
-          status?: string | null
-          subject?: string | null
-        }
-        Update: {
-          channel?: string
-          created_at?: string | null
-          customer_id?: string | null
-          error_message?: string | null
-          id?: string
-          message_content?: string | null
-          notification_type?: string
-          recipient?: string
-          sent_at?: string | null
-          shipment_id?: string | null
-          status?: string | null
-          subject?: string | null
-        }
-        Relationships: []
-      }
-      package_photos: {
-        Row: {
-          caption: string | null
-          file_size: number | null
-          id: string
-          mime_type: string | null
-          photo_type: string
-          photo_url: string
-          shipment_id: string
-          taken_at: string | null
-          taken_by: string | null
-        }
-        Insert: {
-          caption?: string | null
-          file_size?: number | null
-          id?: string
-          mime_type?: string | null
-          photo_type: string
-          photo_url: string
-          shipment_id: string
-          taken_at?: string | null
-          taken_by?: string | null
-        }
-        Update: {
-          caption?: string | null
-          file_size?: number | null
-          id?: string
-          mime_type?: string | null
-          photo_type?: string
-          photo_url?: string
-          shipment_id?: string
-          taken_at?: string | null
-          taken_by?: string | null
-        }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_customer_documents_customer"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_customer_documents_customer"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_insights"
+            referencedColumns: ["customer_email"]
+          },
+        ]
       }
       scan_logs: {
         Row: {
@@ -411,7 +531,7 @@ export type Database = {
           scan_timestamp: string | null
           scan_type: string
           scanned_by: string
-          shipment_id: string
+          shipment_id: string | null
         }
         Insert: {
           barcode: string
@@ -421,7 +541,7 @@ export type Database = {
           scan_timestamp?: string | null
           scan_type: string
           scanned_by: string
-          shipment_id: string
+          shipment_id?: string | null
         }
         Update: {
           barcode?: string
@@ -431,9 +551,17 @@ export type Database = {
           scan_timestamp?: string | null
           scan_type?: string
           scanned_by?: string
-          shipment_id?: string
+          shipment_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "scan_logs_shipment_id_fkey"
+            columns: ["shipment_id"]
+            isOneToOne: false
+            referencedRelation: "shipments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       service_bookings: {
         Row: {
@@ -481,7 +609,36 @@ export type Database = {
           time_slot?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_service_bookings_customer"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_service_bookings_customer"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_insights"
+            referencedColumns: ["customer_email"]
+          },
+          {
+            foreignKeyName: "fk_service_bookings_delivery_address"
+            columns: ["delivery_address_id"]
+            isOneToOne: false
+            referencedRelation: "customer_addresses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_service_bookings_pickup_address"
+            columns: ["pickup_address_id"]
+            isOneToOne: false
+            referencedRelation: "customer_addresses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       shipments: {
         Row: {
@@ -560,33 +717,59 @@ export type Database = {
       }
       staff_users: {
         Row: {
+          approval_status: string | null
+          approved_at: string | null
+          approved_by: string | null
           created_at: string | null
+          department: string | null
           email: string
           full_name: string
           id: string
           is_active: boolean | null
           last_login: string | null
+          phone: string | null
+          requested_at: string | null
           role: string
         }
         Insert: {
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string | null
+          department?: string | null
           email: string
           full_name: string
           id?: string
           is_active?: boolean | null
           last_login?: string | null
+          phone?: string | null
+          requested_at?: string | null
           role?: string
         }
         Update: {
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string | null
+          department?: string | null
           email?: string
           full_name?: string
           id?: string
           is_active?: boolean | null
           last_login?: string | null
+          phone?: string | null
+          requested_at?: string | null
           role?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_staff_approved_by"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "staff_users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tracking_events: {
         Row: {
@@ -595,7 +778,7 @@ export type Database = {
           id: string
           location: string | null
           notes: string | null
-          shipment_id: string
+          shipment_id: string | null
           staff_member: string | null
           timestamp: string | null
         }
@@ -605,7 +788,7 @@ export type Database = {
           id?: string
           location?: string | null
           notes?: string | null
-          shipment_id: string
+          shipment_id?: string | null
           staff_member?: string | null
           timestamp?: string | null
         }
@@ -615,18 +798,189 @@ export type Database = {
           id?: string
           location?: string | null
           notes?: string | null
-          shipment_id?: string
+          shipment_id?: string | null
           staff_member?: string | null
           timestamp?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "tracking_events_shipment_id_fkey"
+            columns: ["shipment_id"]
+            isOneToOne: false
+            referencedRelation: "shipments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_instances: {
+        Row: {
+          actual_revenue: number | null
+          assigned_at: string | null
+          assigned_staff_id: string | null
+          completed_at: string | null
+          created_at: string | null
+          current_step: string | null
+          customer_id: string | null
+          customer_last_activity_at: string | null
+          estimated_revenue: number | null
+          first_staff_response_at: string | null
+          id: string
+          intake_at: string | null
+          is_business_updated: boolean | null
+          is_customer_notified: boolean | null
+          is_staff_notified: boolean | null
+          next_required_action: string | null
+          priority_level: number | null
+          processing_time_minutes: number | null
+          source_channel: string | null
+          tracking_number: string
+          updated_at: string | null
+          workflow_status: string
+          workflow_type: string
+        }
+        Insert: {
+          actual_revenue?: number | null
+          assigned_at?: string | null
+          assigned_staff_id?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          current_step?: string | null
+          customer_id?: string | null
+          customer_last_activity_at?: string | null
+          estimated_revenue?: number | null
+          first_staff_response_at?: string | null
+          id?: string
+          intake_at?: string | null
+          is_business_updated?: boolean | null
+          is_customer_notified?: boolean | null
+          is_staff_notified?: boolean | null
+          next_required_action?: string | null
+          priority_level?: number | null
+          processing_time_minutes?: number | null
+          source_channel?: string | null
+          tracking_number: string
+          updated_at?: string | null
+          workflow_status?: string
+          workflow_type?: string
+        }
+        Update: {
+          actual_revenue?: number | null
+          assigned_at?: string | null
+          assigned_staff_id?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          current_step?: string | null
+          customer_id?: string | null
+          customer_last_activity_at?: string | null
+          estimated_revenue?: number | null
+          first_staff_response_at?: string | null
+          id?: string
+          intake_at?: string | null
+          is_business_updated?: boolean | null
+          is_customer_notified?: boolean | null
+          is_staff_notified?: boolean | null
+          next_required_action?: string | null
+          priority_level?: number | null
+          processing_time_minutes?: number | null
+          source_channel?: string | null
+          tracking_number?: string
+          updated_at?: string | null
+          workflow_status?: string
+          workflow_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_instances_assigned_staff_id_fkey"
+            columns: ["assigned_staff_id"]
+            isOneToOne: false
+            referencedRelation: "staff_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_instances_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_instances_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customer_insights"
+            referencedColumns: ["customer_email"]
+          },
+        ]
       }
     }
     Views: {
-      [_ in never]: never
+      customer_insights: {
+        Row: {
+          avg_processing_time: number | null
+          avg_satisfaction: number | null
+          customer_email: string | null
+          customer_name: string | null
+          last_activity: string | null
+          repeat_customer: boolean | null
+          total_shipments: number | null
+          total_spent: number | null
+        }
+        Relationships: []
+      }
+      daily_revenue_summary: {
+        Row: {
+          avg_processing_time: number | null
+          avg_satisfaction: number | null
+          daily_revenue: number | null
+          date: string | null
+          total_workflows: number | null
+        }
+        Relationships: []
+      }
+      staff_performance_summary: {
+        Row: {
+          avg_customer_rating: number | null
+          avg_efficiency: number | null
+          avg_processing_time: number | null
+          staff_email: string | null
+          total_assignments: number | null
+          total_revenue_generated: number | null
+        }
+        Relationships: []
+      }
+      unified_communication_timeline: {
+        Row: {
+          action_required: boolean | null
+          channel: string | null
+          created_at: string | null
+          delivery_status: string | null
+          id: string | null
+          is_read: boolean | null
+          message_content: string | null
+          message_subject: string | null
+          message_type: string | null
+          participant_name: string | null
+          participant_type: string | null
+          response_count: number | null
+          tracking_number: string | null
+          workflow_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "communication_threads_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
-      [_ in never]: never
+      calculate_business_metrics: {
+        Args: { p_workflow_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
@@ -636,3 +990,129 @@ export type Database = {
     }
   }
 }
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
+  public: {
+    Enums: {},
+  },
+} as const

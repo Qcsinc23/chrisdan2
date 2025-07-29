@@ -18,7 +18,7 @@ import {
   Calendar,
   Eye
 } from 'lucide-react'
-import { useAuth } from '@/contexts/AuthContext'
+import { useAuth, useUserRole } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import BarcodeScanner from '@/components/BarcodeScanner'
@@ -495,7 +495,8 @@ function ShipmentsManagement({ shipments, loading, onRefresh }: {
 }
 
 export default function StaffDashboard() {
-  const { user, signOut, isStaff } = useAuth()
+  const { user, signOut } = useAuth()
+  const { isStaff } = useUserRole()
   const location = useLocation()
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('overview')

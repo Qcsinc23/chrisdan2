@@ -90,35 +90,46 @@ export default function UnifiedDashboard({ userType, userId }: UnifiedDashboardP
     }
 
     const loadWorkflowData = async () => {
-        let query = supabase
+        // First get workflow instances
+        let workflowQuery = supabase
             .from('workflow_instances')
-            .select(`
-                *,
-                customer_accounts!inner(full_name, email),
-                staff_users!inner(email)
-            `)
+            .select('*')
             .order('created_at', { ascending: false })
             .limit(10)
 
         if (userType === 'customer' && userId) {
-            query = query.eq('customer_id', userId)
+            workflowQuery = workflowQuery.eq('customer_id', userId)
         } else if (userType === 'staff' && userId) {
-            query = query.eq('assigned_staff_id', userId)
+            workflowQuery = workflowQuery.eq('assigned_staff_id', userId)
         }
 
-        const { data, error } = await query
+        const { data: workflowData, error: workflowError } = await workflowQuery
 
-        if (error) {
-            console.error('Error loading workflow data:', error)
+        if (workflowError) {
+            console.error('Error loading workflow data:', workflowError)
             return
         }
 
+        // Get customer and staff data separately
+        const customerIds = [...new Set(workflowData?.map(w => w.customer_id).filter(Boolean))]
+        const staffIds = [...new Set(workflowData?.map(w => w.assigned_staff_id).filter(Boolean))]
+
+        const { data: customers } = await supabase
+            .from('customer_accounts')
+            .select('id, full_name')
+            .in('id', customerIds)
+
+        const { data: staff } = await supabase
+            .from('staff_users')
+            .select('id, email')
+            .in('id', staffIds)
+
         // Calculate stats
-        const total = data?.length || 0
-        const active = data?.filter(w => ['intake', 'assigned', 'processing'].includes(w.workflow_status)).length || 0
-        const completed = data?.filter(w => w.workflow_status === 'completed').length || 0
-        const pending = data?.filter(w => w.workflow_status === 'pending').length || 0
-        const revenue = data?.reduce((sum, w) => sum + (w.actual_revenue || 0), 0) || 0
+        const total = workflowData?.length || 0
+        const active = workflowData?.filter(w => ['intake', 'assigned', 'processing'].includes(w.workflow_status)).length || 0
+        const completed = workflowData?.filter(w => w.workflow_status === 'completed').length || 0
+        const pending = workflowData?.filter(w => w.workflow_status === 'pending').length || 0
+        const revenue = workflowData?.reduce((sum, w) => sum + (w.actual_revenue || 0), 0) || 0
 
         setStats({
             total,
@@ -129,17 +140,22 @@ export default function UnifiedDashboard({ userType, userId }: UnifiedDashboardP
             satisfaction: 4.5 // Placeholder - would come from business_metrics
         })
 
-        setRecentActivity(data?.map(w => ({
-            id: w.id,
-            tracking_number: w.tracking_number,
-            customer_name: w.customer_accounts?.full_name || 'Unknown',
-            workflow_status: w.workflow_status,
-            workflow_type: w.workflow_type,
-            priority_level: w.priority_level,
-            created_at: w.created_at,
-            assigned_staff: w.staff_users?.email,
-            estimated_revenue: w.estimated_revenue
-        })) || [])
+        setRecentActivity(workflowData?.map(w => {
+            const customer = customers?.find(c => c.id === w.customer_id)
+            const staffMember = staff?.find(s => s.id === w.assigned_staff_id)
+            
+            return {
+                id: w.id,
+                tracking_number: w.tracking_number,
+                customer_name: customer?.full_name || 'Unknown',
+                workflow_status: w.workflow_status,
+                workflow_type: w.workflow_type,
+                priority_level: w.priority_level || 3,
+                created_at: w.created_at,
+                assigned_staff: staffMember?.email,
+                estimated_revenue: w.estimated_revenue
+            }
+        }) || [])
     }
 
     const loadBusinessInsights = async () => {

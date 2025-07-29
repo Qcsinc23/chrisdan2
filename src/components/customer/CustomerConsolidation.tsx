@@ -10,13 +10,15 @@ interface CustomerConsolidationProps {
 
 interface ConsolidationRequest {
   id: string
-  status: string
-  destination_country: string
-  total_packages: number
-  total_weight: number
-  estimated_savings: number
-  special_instructions: string
-  created_at: string
+  consolidation_name: string
+  customer_id: string
+  status: string | null
+  consolidation_date: string | null
+  requested_date: string | null
+  shipped_date: string | null
+  total_packages: number | null
+  total_weight: number | null
+  notes: string | null
   items: ConsolidationItem[]
 }
 
@@ -451,21 +453,21 @@ export default function CustomerConsolidation({ customerAccount }: CustomerConso
                   <div>
                     <div className="flex items-center space-x-2 mb-2">
                       <h4 className="text-lg font-semibold text-gray-900">
-                        {consolidation.destination_country}
+                        {consolidation.consolidation_name}
                       </h4>
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(consolidation.status)}`}>
-                        {consolidation.status.charAt(0).toUpperCase() + consolidation.status.slice(1)}
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(consolidation.status || 'pending')}`}>
+                        {(consolidation.status || 'pending').charAt(0).toUpperCase() + (consolidation.status || 'pending').slice(1)}
                       </span>
                     </div>
                     <p className="text-sm text-gray-600">
-                      Created on {formatDate(consolidation.created_at)}
+                      Created on {consolidation.requested_date ? formatDate(consolidation.requested_date) : 'N/A'}
                     </p>
                   </div>
                   
                   <div className="text-right">
-                    <p className="text-sm text-gray-600">Estimated Savings</p>
+                    <p className="text-sm text-gray-600">Notes</p>
                     <p className="text-lg font-semibold text-green-600">
-                      ${consolidation.estimated_savings || 0}
+                      {consolidation.notes || 'No notes'}
                     </p>
                   </div>
                 </div>
@@ -482,9 +484,9 @@ export default function CustomerConsolidation({ customerAccount }: CustomerConso
                   </div>
                 </div>
                 
-                {consolidation.special_instructions && (
+                {consolidation.notes && (
                   <div className="text-sm text-gray-600 mb-4">
-                    <span className="font-medium">Instructions:</span> {consolidation.special_instructions}
+                    <span className="font-medium">Instructions:</span> {consolidation.notes}
                   </div>
                 )}
                 

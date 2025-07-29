@@ -1,4 +1,10 @@
-Deno.serve(async (req) => {
+// @ts-ignore
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+// Import shared types
+import '../_shared/types.ts'
+
+Deno.serve(async (req: Request): Promise<Response> => {
     const corsHeaders = {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -12,17 +18,53 @@ Deno.serve(async (req) => {
     }
 
     try {
+        // Get JWT from Authorization header
+        const authHeader = req.headers.get('Authorization');
+        if (!authHeader) {
+            throw new Error('Authorization header is required');
+        }
+
+        const jwt = authHeader.replace('Bearer ', '');
+        
+        const supabaseUrl = Deno.env.get('SUPABASE_URL');
+        const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
+        const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+        if (!supabaseUrl || !supabaseAnonKey || !serviceRoleKey) {
+            throw new Error('Supabase configuration missing');
+        }
+
+        // Create client with user's JWT for RLS compliance
+        const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+            global: {
+                headers: {
+                    Authorization: `Bearer ${jwt}`
+                }
+            }
+        });
+
+        // Validate user authentication
+        const { data: { user }, error: authError } = await supabase.auth.getUser(jwt);
+        if (authError || !user) {
+            throw new Error('Invalid or expired token');
+        }
+
         const { fileData, fileName, documentType, customerId, shipmentId, mimeType: explicitMimeType } = await req.json();
 
         if (!fileData || !fileName || !documentType || !customerId) {
             throw new Error('File data, filename, document type, and customer ID are required');
         }
 
-        const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-        const supabaseUrl = Deno.env.get('SUPABASE_URL');
+        // Verify user has access to this customer account (RLS will handle this)
+        const { data: customerAccount, error: customerError } = await supabase
+            .from('customer_accounts')
+            .select('id')
+            .eq('id', customerId)
+            .eq('user_id', user.id)
+            .single();
 
-        if (!serviceRoleKey || !supabaseUrl) {
-            throw new Error('Supabase configuration missing');
+        if (customerError || !customerAccount) {
+            throw new Error('Access denied: Invalid customer ID or insufficient permissions');
         }
 
         // Extract base64 data from data URL
@@ -40,12 +82,12 @@ Deno.serve(async (req) => {
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
         const uniqueFileName = `${customerId}/${documentType}/${timestamp}-${fileName}`;
 
-        // Upload to Supabase Storage
+        // Upload to Supabase Storage using service role for storage operations only
         const uploadResponse = await fetch(`${supabaseUrl}/storage/v1/object/customer-documents/${uniqueFileName}`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${serviceRoleKey}`,
-                'Content-Type': mimeType,
+                'Content-Type': finalMimeType,
                 'x-upsert': 'true'
             },
             body: binaryData
@@ -59,37 +101,29 @@ Deno.serve(async (req) => {
         // Get public URL
         const publicUrl = `${supabaseUrl}/storage/v1/object/public/customer-documents/${uniqueFileName}`;
 
-        // Save document metadata to database
-        const insertResponse = await fetch(`${supabaseUrl}/rest/v1/customer_documents`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${serviceRoleKey}`,
-                'apikey': serviceRoleKey,
-                'Content-Type': 'application/json',
-                'Prefer': 'return=representation'
-            },
-            body: JSON.stringify({
+        // Save document metadata to database using user's JWT (RLS will apply)
+        const { data: documentData, error: insertError } = await supabase
+            .from('customer_documents')
+            .insert({
                 customer_id: customerId,
                 document_type: documentType,
                 document_name: fileName,
                 file_url: publicUrl,
                 file_size: binaryData.length,
-                mime_type: mimeType,
+                mime_type: finalMimeType,
                 associated_shipment_id: shipmentId || null
             })
-        });
+            .select()
+            .single();
 
-        if (!insertResponse.ok) {
-            const errorText = await insertResponse.text();
-            throw new Error(`Database insert failed: ${errorText}`);
+        if (insertError) {
+            throw new Error(`Database insert failed: ${insertError.message}`);
         }
-
-        const documentData = await insertResponse.json();
 
         return new Response(JSON.stringify({
             data: {
                 publicUrl,
-                document: documentData[0]
+                document: documentData
             }
         }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
