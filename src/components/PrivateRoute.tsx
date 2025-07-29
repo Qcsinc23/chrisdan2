@@ -1,5 +1,5 @@
 import { Navigate, useLocation } from 'react-router-dom'
-import { useAuth } from '@/contexts/AuthContext'
+import { useAuth, useUserRole } from '@/contexts/AuthContext'
 import LoadingSpinner from '@/components/LoadingSpinner'
 
 interface PrivateRouteProps {
@@ -9,7 +9,8 @@ interface PrivateRouteProps {
 }
 
 export default function PrivateRoute({ children, requireStaff = false, requireCustomer = false }: PrivateRouteProps) {
-  const { user, loading, isStaff, isCustomer, staffLoading, customerLoading } = useAuth()
+  const { user, loading } = useAuth()
+  const { isStaff, isCustomer, staffLoading, customerLoading } = useUserRole()
   const location = useLocation()
   
   // Show loading during ANY loading state to prevent premature decisions
